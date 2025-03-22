@@ -1,6 +1,5 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 
@@ -24,16 +23,16 @@ async function bootstrap() {
   // TODO: Sentry.init({ dsn: process.env.SENTRY_DSN, tracesSampleRate: 1.0 });
 
   // Set up Swagger documentation
-  const config = new DocumentBuilder()
-    .setTitle('EcoCast API')
-    .setDescription('API for generating news podcasts')
-    .setTermsOfService(`${process.env.HOST}:${process.env.PORT}`)
-    .setLicense('MIT License', 'https://opensource.org/licenses/MIT')
-    .addServer(`${process.env.HOST}:${process.env.PORT}`)
-    .setVersion('1.0')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  // const config = new DocumentBuilder()
+  //   .setTitle('EcoCast API')
+  //   .setDescription('API for generating news podcasts')
+  //   .setTermsOfService(`${process.env.HOST}:${process.env.PORT}`)
+  //   .setLicense('MIT License', 'https://opensource.org/licenses/MIT')
+  //   .addServer(`${process.env.HOST}:${process.env.PORT}`)
+  //   .setVersion('1.0')
+  //   .build();
+  // const document = SwaggerModule.createDocument(app, config);
+  // SwaggerModule.setup('api', app, document);
 
   // Start the server
   const port = process.env.PORT || 3001;
@@ -42,7 +41,9 @@ async function bootstrap() {
   await app.listen(port);
 
   // Use Pino logger
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const logger = app.get(PinoLogger);
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   logger.log(
     `Server running on port ${port}, env: ${process.env.NODE_ENV || 'unknown'}`,
   );
