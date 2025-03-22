@@ -8,9 +8,9 @@ import {
 import { ConfigType } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
 import jwtConfig from 'src/auth/config/jwt.config';
-import { GoogleTokenDto } from '../dtos/google-token.dto';
-import { UsersService } from '../../../users/providers/users.service';
 import { GenerateTokensProvider } from 'src/auth/providers/generate-tokens.provider';
+import { UsersService } from '../../../users/providers/users.service';
+import { GoogleTokenDto } from '../dtos/google-token.dto';
 
 @Injectable()
 export class GoogleAuthenticationService implements OnModuleInit {
@@ -42,12 +42,17 @@ export class GoogleAuthenticationService implements OnModuleInit {
       console.log('authenticate -> loginTicket', loginTicket);
 
       // extract the payload from google token
+      const payload = loginTicket.getPayload();
+      if (!payload?.email || !payload.sub) {
+        throw new UnauthorizedException('Invalid Google token payload');
+      }
+
       const {
         email,
         sub: googleId,
-        given_name: firstName,
-        family_name: lastName,
-      } = loginTicket.getPayload();
+        given_name: firstName = '',
+        family_name: lastName = '',
+      } = payload;
       console.log('authenticate -> email', email);
       console.log('authenticate -> googleId', googleId);
       console.log('authenticate -> firstName', firstName);

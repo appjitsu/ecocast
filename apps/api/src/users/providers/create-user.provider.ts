@@ -28,14 +28,14 @@ export class CreateUserProvider {
   ) {}
 
   public async createUser(createUserDto: CreateUserDto) {
-    let existingUser = undefined;
+    let existingUser: User | null = null;
 
     try {
       // Check is user exists with same email
       existingUser = await this.usersRepository.findOne({
         where: { email: createUserDto.email },
       });
-    } catch (error) {
+    } catch {
       // Might save the details of the exception
       // Information which is sensitive
       throw new RequestTimeoutException(
@@ -61,7 +61,7 @@ export class CreateUserProvider {
 
     try {
       newUser = await this.usersRepository.save(newUser);
-    } catch (error) {
+    } catch {
       throw new RequestTimeoutException(
         'Unable to process your request at the moment please try later',
         {

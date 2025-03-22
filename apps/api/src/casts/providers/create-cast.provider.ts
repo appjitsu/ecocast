@@ -1,11 +1,11 @@
 import { Body, ConflictException, Injectable } from '@nestjs/common';
-import { CreateCastDTO } from '../dtos/create-cast.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { IActiveUser } from 'src/auth/interfaces/active-user.interface';
+import { UsersService } from 'src/users/providers/users.service';
+import { User } from 'src/users/user.entity';
 import { Repository } from 'typeorm';
 import { Cast } from '../cast.entity';
-import { UsersService } from 'src/users/providers/users.service';
-import { IActiveUser } from 'src/auth/interfaces/active-user.interface';
-import { InjectRepository } from '@nestjs/typeorm';
-
+import { CreateCastDTO } from '../dtos/create-cast.dto';
 @Injectable()
 export class CreateCastProvider {
   constructor(
@@ -17,7 +17,7 @@ export class CreateCastProvider {
    * Creating new casts
    */
   public async create(@Body() createCastDto: CreateCastDTO, user: IActiveUser) {
-    let owner = undefined;
+    let owner: User | null = null;
 
     try {
       // Find user from database based on userId

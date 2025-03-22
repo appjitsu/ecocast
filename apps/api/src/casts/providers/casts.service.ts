@@ -4,16 +4,16 @@ import {
   RequestTimeoutException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { IActiveUser } from 'src/auth/interfaces/active-user.interface';
 import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { UsersService } from 'src/users/providers/users.service';
 import { Repository } from 'typeorm';
 import { Cast } from '../cast.entity';
+import { CreateCastDTO } from '../dtos/create-cast.dto';
 import { GetCastsDto } from '../dtos/get-casts.dto';
 import { PatchCastDTO } from '../dtos/patch-cast.dto';
 import { CreateCastProvider } from './create-cast.provider';
-import { IActiveUser } from 'src/auth/interfaces/active-user.interface';
-import { CreateCastDTO } from '../dtos/create-cast.dto';
 
 @Injectable()
 export class CastsService {
@@ -63,7 +63,7 @@ export class CastsService {
   }
 
   public async update(castId: number, patchCastDto: PatchCastDTO) {
-    let cast = undefined;
+    let cast: Cast | null = null;
 
     // Find the Cast
     try {
@@ -71,7 +71,7 @@ export class CastsService {
       cast = await this.castsRepository.findOneBy({
         id: castId,
       });
-    } catch (error) {
+    } catch {
       throw new RequestTimeoutException(
         'Unable to process your request at the moment please try later',
         {
@@ -91,7 +91,7 @@ export class CastsService {
       });
 
       return cast;
-    } catch (error) {
+    } catch {
       throw new RequestTimeoutException(
         'Unable to process your request at the moment please try later',
         {

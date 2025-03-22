@@ -3,11 +3,12 @@ import {
   Inject,
   Injectable,
   RequestTimeoutException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { UsersService } from 'src/users/providers/users.service';
 import { SignInDto } from '../dtos/signin.dto';
-import { HashingProvider } from './hashing.provider';
 import { GenerateTokensProvider } from './generate-tokens.provider';
+import { HashingProvider } from './hashing.provider';
 
 @Injectable()
 export class SignInProvider {
@@ -18,7 +19,11 @@ export class SignInProvider {
     private readonly generateTokensProvider: GenerateTokensProvider,
   ) {}
   public async signIn(body: SignInDto) {
-    let user = await this.usersService.findOneByEmail(body.email);
+    const user = await this.usersService.findOneByEmail(body.email);
+
+    if (!user?.password) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
     // compare the password
     let isMatch: boolean = false;

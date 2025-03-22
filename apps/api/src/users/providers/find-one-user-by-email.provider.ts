@@ -14,12 +14,12 @@ export class FindOneUserByEmailProvider {
     private readonly usersRepository: Repository<User>,
   ) {}
   public async findOneByEmail(email: string) {
-    let user: User | undefined;
+    let user: User | null = null;
     try {
       user = await this.usersRepository.findOne({
         where: { email },
       });
-    } catch (error) {
+    } catch {
       throw new RequestTimeoutException(
         'Unable to process your request at the moment please try later',
         {

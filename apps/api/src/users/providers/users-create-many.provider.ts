@@ -4,7 +4,7 @@ import {
   RequestTimeoutException,
 } from '@nestjs/common';
 import { HashingProvider } from 'src/auth/providers/hashing.provider';
-import { DataSource } from 'typeorm';
+import { DataSource, QueryRunner } from 'typeorm';
 import { CreateManyUsersDto } from '../dtos/create-many-users.dto';
 import { User } from '../user.entity';
 
@@ -16,8 +16,8 @@ export class UsersCreateManyProvider {
     private readonly hashingProvider: HashingProvider,
   ) {}
   public async createMany(createManyUserDto: CreateManyUsersDto) {
-    let newUsers: User[] = [];
-    let queryRunner = undefined;
+    const newUsers: User[] = [];
+    let queryRunner: QueryRunner | null = null;
 
     try {
       // create query runner instance
@@ -25,7 +25,7 @@ export class UsersCreateManyProvider {
 
       // connect query runner to db
       await queryRunner.connect();
-    } catch (error) {
+    } catch {
       throw new RequestTimeoutException(
         'Unable to process your request at the moment please try later',
         {
@@ -57,13 +57,8 @@ export class UsersCreateManyProvider {
         description: String(error),
       });
     } finally {
-      try {
-        // release connection
+      if (queryRunner) {
         await queryRunner.release();
-      } catch (error) {
-        throw new RequestTimeoutException('Could not release the connection', {
-          description: String(error),
-        });
       }
     }
 

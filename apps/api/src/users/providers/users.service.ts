@@ -11,15 +11,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import profileConfig from '../config/profile.config';
 import { CreateManyUsersDto } from '../dtos/create-many-users.dto';
-import { GetUsersParamDto } from '../dtos/get-users-param.dto';
+import { IGoogleUser } from '../interfaces/google-user.interface';
 import { User } from '../user.entity';
 import { CreateUserDto } from './../dtos/create-user.dto';
+import { CreateGoogleUserProvider } from './create-google-user.provider';
 import { CreateUserProvider } from './create-user.provider';
+import { FindOneByGoogleIdProvider } from './find-one-by-google-id.provider';
 import { FindOneUserByEmailProvider } from './find-one-user-by-email.provider';
 import { UsersCreateManyProvider } from './users-create-many.provider';
-import { FindOneByGoogleIdProvider } from './find-one-by-google-id.provider';
-import { CreateGoogleUserProvider } from './create-google-user.provider';
-import { IGoogleUser } from '../interfaces/google-user.interface';
 
 /**
  * Controller class for '/users' API endpoint
@@ -71,11 +70,7 @@ export class UsersService {
   /**
    * Public method responsible for handling GET request for '/users' endpoint
    */
-  public findAll(
-    getUserParamDto: GetUsersParamDto,
-    limit: number,
-    page: number,
-  ) {
+  public findAll() {
     throw new HttpException(
       {
         status: HttpStatus.MOVED_PERMANENTLY,
@@ -95,13 +90,13 @@ export class UsersService {
    * Public method used to find one user using the ID of the user
    */
   public async findOneById(id: number) {
-    let user = undefined;
+    let user: User | null = null;
 
     try {
       user = await this.usersRepository.findOneBy({
         id,
       });
-    } catch (error) {
+    } catch {
       throw new RequestTimeoutException(
         'Unable to process your request at the moment please try later',
         {
