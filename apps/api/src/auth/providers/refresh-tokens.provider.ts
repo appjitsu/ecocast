@@ -1,11 +1,11 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { RefreshTokenDto } from '../dtos/refresh-token.dto';
-import { JwtService } from '@nestjs/jwt';
-import jwtConfig from '../config/jwt.config';
 import { ConfigType } from '@nestjs/config';
-import { GenerateTokensProvider } from './generate-tokens.provider';
+import { JwtService } from '@nestjs/jwt';
+import { ActiveUser } from '@repo/types';
 import { UsersService } from 'src/users/providers/users.service';
-import { IActiveUser } from '../interfaces/active-user.interface';
+import jwtConfig from '../config/jwt.config';
+import { RefreshTokenDto } from '../dtos/refresh-token.dto';
+import { GenerateTokensProvider } from './generate-tokens.provider';
 
 @Injectable()
 export class RefreshTokensProvider {
@@ -20,7 +20,7 @@ export class RefreshTokensProvider {
     try {
       // verify the refresh token using jwt service
       const { sub } = await this.jwtService.verifyAsync<
-        Pick<IActiveUser, 'sub'>
+        Pick<ActiveUser, 'sub'>
       >(tokenData.refreshToken, {
         secret: this.jwtConfiguration.secret,
         audience: this.jwtConfiguration.audience,

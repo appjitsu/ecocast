@@ -8,10 +8,10 @@ import {
 } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { GoogleUser } from '@repo/types';
 import { Repository } from 'typeorm';
 import profileConfig from '../config/profile.config';
 import { CreateManyUsersDto } from '../dtos/create-many-users.dto';
-import { IGoogleUser } from '../interfaces/google-user.interface';
 import { User } from '../user.entity';
 import { CreateUserDto } from './../dtos/create-user.dto';
 import { CreateGoogleUserProvider } from './create-google-user.provider';
@@ -128,7 +128,7 @@ export class UsersService {
     return await this.findOneUserByGoogleIdProvider.findOneByGoogleId(googleId);
   }
 
-  public async createGoogleUser(googleUser: IGoogleUser) {
+  public async createGoogleUser(googleUser: GoogleUser) {
     return await this.createGoogleUserProvider.createGoogleUser(googleUser);
   }
 }

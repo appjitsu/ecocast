@@ -4,8 +4,7 @@ import {
   RequestTimeoutException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IActiveUser } from 'src/auth/interfaces/active-user.interface';
-import { Paginated } from 'src/common/pagination/interfaces/paginated.interface';
+import { ActiveUser, Paginated } from '@repo/types';
 import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
 import { UsersService } from 'src/users/providers/users.service';
 import { Repository } from 'typeorm';
@@ -41,15 +40,21 @@ export class CastsService {
     userId: string,
     castQuery: GetCastsDto,
   ): Promise<Paginated<Cast>> {
-    const casts = await this.paginationProvider.paginateQuery(
-      {
-        limit: castQuery.limit,
-        page: castQuery.page,
-      },
-      this.castsRepository,
-    );
+    try {
+      const casts = await this.paginationProvider.paginateQuery(
+        {
+          limit: castQuery.limit,
+          page: castQuery.page,
+        },
+        this.castsRepository,
+      );
 
-    return casts;
+      return casts;
+    } catch {
+      throw new RequestTimeoutException('Unable to fetch casts', {
+        description: 'Error connecting to the database',
+      });
+    }
   }
 
   /**
@@ -58,7 +63,7 @@ export class CastsService {
    * @param user
    * @returns cast
    */
-  public async create(createCastDto: CreateCastDTO, user: IActiveUser) {
+  public async create(createCastDto: CreateCastDTO, user: ActiveUser) {
     return await this.createCastProvider.create(createCastDto, user);
   }
 

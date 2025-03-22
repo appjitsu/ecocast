@@ -1,4 +1,4 @@
-export interface IActiveUser {
+export interface ActiveUser {
   sub: number;
   email: string;
 }

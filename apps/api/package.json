@@ -21,6 +21,7 @@
     "doc": "npx @compodoc/compodoc -p tsconfig.json -s --port 3002 --watch -d ./documentation"
   },
   "dependencies": {
+    "@repo/types": "workspace:*",
     "@nestjs/config": "^4.0.1",
     "@nestjs/cqrs": "^11.0.2",
     "@nestjs/jwt": "^11.0.0",
