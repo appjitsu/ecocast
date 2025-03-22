@@ -14,18 +14,33 @@ jest.mock('../page.module.css', () => ({
 }));
 
 // Mock the Button component
+// Mock the Button component
 jest.mock('@repo/ui/button', () => ({
   Button: ({
     children,
     className,
     appName,
+    onClick,
+    type = 'button',
+    ...props
   }: {
     children: ReactNode;
     className?: string;
     appName: string;
-  }) => <button className={className}>{children}</button>,
+    onClick?: () => void;
+    type?: 'button' | 'submit' | 'reset';
+    [key: string]: any;
+  }) => (
+    <button
+      className={className}
+      type={type}
+      onClick={onClick || (() => alert(`Hello from your ${appName} app!`))}
+      {...props}
+    >
+      {children}
+    </button>
+  ),
 }));
-
 describe('Home', () => {
   it('renders the Turborepo logos for both themes', () => {
     render(<Home />);
@@ -35,12 +50,11 @@ describe('Home', () => {
     expect(logos[1]).toHaveAttribute('src', 'turborepo-light.svg');
   });
 
-  it('renders the getting started instructions', () => {
+  it('renders the call-to-action buttons', () => {
     render(<Home />);
-    expect(screen.getByText(/Get started by editing/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Save and see your changes instantly/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Deploy now/i)).toBeInTheDocument();
+    expect(screen.getByText(/Read our docs/i)).toBeInTheDocument();
+    expect(screen.getByText(/Open alert/i)).toBeInTheDocument();
   });
 
   it('renders the deploy and docs links', () => {
@@ -73,5 +87,7 @@ describe('Home', () => {
     render(<Home />);
     const button = screen.getByRole('button', { name: /open alert/i });
     expect(button).toBeInTheDocument();
+    expect(button).toHaveAttribute('type', 'button');
+    expect(button).toHaveClass('secondary');
   });
 });
