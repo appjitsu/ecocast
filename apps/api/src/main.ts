@@ -41,9 +41,7 @@ async function bootstrap() {
   await app.listen(port);
 
   // Use Pino logger
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const logger = app.get(PinoLogger);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   logger.log(
     `Server running on port ${port}, env: ${process.env.NODE_ENV || 'unknown'}`,
   );
