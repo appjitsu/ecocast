@@ -1,5 +1,5 @@
-import { Cast } from 'src/casts/cast.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Cast } from '../casts/cast.entity';
 
 // import { Post } from 'src/posts/post.entity';
 

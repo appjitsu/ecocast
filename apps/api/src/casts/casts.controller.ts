@@ -8,11 +8,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ActiveUser } from 'src/auth/decorators/active-user.decorator';
 import { CreateCastDTO } from './dtos/create-cast.dto';
 import { GetCastsDto } from './dtos/get-casts.dto';
 import { PatchCastDTO } from './dtos/patch-cast.dto';
 import { CastsService } from './providers/casts.service';
-import { ActiveUser } from 'src/auth/decorators/active-user.decorator';
 
 @Controller('casts')
 @ApiTags('Casts')
@@ -35,8 +35,6 @@ export class CastsController {
     @Param('userId') userId: string,
     @Query() castQuery: GetCastsDto,
   ) {
-    console.log('getCasts -> userId', userId);
-    console.log('getCasts -> castQuery', castQuery);
     return this.castsService.findAll(userId, castQuery);
   }
 
@@ -53,8 +51,6 @@ export class CastsController {
   })
   @Post()
   public createCast(@Body() body: CreateCastDTO, @ActiveUser() user) {
-    console.log('createCast -> body', body);
-    console.log('createCast -> user', user);
     return this.castsService.create(body, user);
   }
 
@@ -74,7 +70,6 @@ export class CastsController {
     @Param('castId') castId: number,
     @Body() body: PatchCastDTO,
   ) {
-    console.log('updateCast -> body', body);
     return this.castsService.update(castId, body);
   }
 }

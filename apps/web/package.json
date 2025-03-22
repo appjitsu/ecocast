@@ -3,15 +3,17 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently \"next dev\" \"jest --watch\"",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@repo/ui": "workspace:*",
     "@repo/types": "workspace:*",
+    "@repo/ui": "workspace:*",
     "next": "^14.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -19,12 +21,20 @@
   },
   "devDependencies": {
     "@next/eslint-plugin-next": "^14.1.0",
+    "@repo/eslint-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
+    "@swc/jest": "^0.2.37",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.2.1",
+    "@types/jest": "^29.5.14",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
+    "concurrently": "^8.2.2",
     "eslint": "^8.57.0",
-    "@repo/eslint-config": "workspace:*",
-    "@repo/typescript-config": "workspace:*",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "jest-watch-typeahead": "^2.2.2",
     "typescript": "^5.3.3"
   }
 }

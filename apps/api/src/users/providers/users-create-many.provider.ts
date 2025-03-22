@@ -12,9 +12,9 @@ import { User } from '../user.entity';
 export class UsersCreateManyProvider {
   constructor(
     private readonly dataSource: DataSource,
-
     private readonly hashingProvider: HashingProvider,
   ) {}
+
   public async createMany(createManyUserDto: CreateManyUsersDto) {
     const newUsers: User[] = [];
     let queryRunner: QueryRunner | null = null;
@@ -24,20 +24,20 @@ export class UsersCreateManyProvider {
       queryRunner = this.dataSource.createQueryRunner();
 
       // connect query runner to db
-      await queryRunner.connect();
-    } catch {
-      throw new RequestTimeoutException(
-        'Unable to process your request at the moment please try later',
-        {
-          description: 'Error connecting to the database',
-        },
-      );
-    }
+      try {
+        await queryRunner.connect();
+      } catch (error) {
+        throw new RequestTimeoutException(
+          'Unable to process your request at the moment please try later',
+          {
+            description: 'Error connecting to the database',
+          },
+        );
+      }
 
-    // start transaction
-    await queryRunner.startTransaction();
+      // start transaction
+      await queryRunner.startTransaction();
 
-    try {
       for (const user of createManyUserDto.users) {
         const newUser = queryRunner.manager.create(User, {
           ...user,
@@ -50,9 +50,13 @@ export class UsersCreateManyProvider {
       // if successful, commit transaction
       await queryRunner.commitTransaction();
     } catch (error) {
-      console.log('Users.CreateMany -> error', error);
-      // if error, rollback transaction
-      await queryRunner.rollbackTransaction();
+      // if error, rollback transaction if we started one
+      if (queryRunner?.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+      if (error instanceof RequestTimeoutException) {
+        throw error;
+      }
       throw new ConflictException('Could not complete the transaction', {
         description: String(error),
       });

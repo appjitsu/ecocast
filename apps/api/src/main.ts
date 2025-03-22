@@ -36,7 +36,6 @@ async function bootstrap() {
 
   // Start the server
   const port = process.env.PORT || 3001;
-  console.log(port);
   app.enableCors();
   await app.listen(port);
 

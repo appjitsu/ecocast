@@ -30,6 +30,10 @@ export class RefreshTokensProvider {
       // fetch user from db using user service
       const user = await this.usersService.findOneById(sub);
 
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
       // generate new tokens
       return await this.generateTokensProvider.generateTokens(user);
     } catch (error) {

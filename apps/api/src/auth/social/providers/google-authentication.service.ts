@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { OAuth2Client } from 'google-auth-library';
-import jwtConfig from 'src/auth/config/jwt.config';
-import { GenerateTokensProvider } from 'src/auth/providers/generate-tokens.provider';
 import { UsersService } from '../../../users/providers/users.service';
+import jwtConfig from '../../config/jwt.config';
+import { GenerateTokensProvider } from '../../providers/generate-tokens.provider';
 import { GoogleTokenDto } from '../dtos/google-token.dto';
 
 @Injectable()
@@ -39,7 +39,6 @@ export class GoogleAuthenticationService implements OnModuleInit {
       const loginTicket = await this.oauthClient.verifyIdToken({
         idToken: tokenData.token,
       });
-      console.log('authenticate -> loginTicket', loginTicket);
 
       // extract the payload from google token
       const payload = loginTicket.getPayload();
@@ -53,14 +52,9 @@ export class GoogleAuthenticationService implements OnModuleInit {
         given_name: firstName = '',
         family_name: lastName = '',
       } = payload;
-      console.log('authenticate -> email', email);
-      console.log('authenticate -> googleId', googleId);
-      console.log('authenticate -> firstName', firstName);
-      console.log('authenticate -> lastName', lastName);
 
       // find user in db using the googleId
       const user = await this.usersService.findOneByGoogleId(googleId);
-      console.log('authenticate -> user', user);
 
       // if user exists, generate token
       if (user) {
@@ -73,7 +67,6 @@ export class GoogleAuthenticationService implements OnModuleInit {
         firstName,
         lastName,
       });
-      console.log('authenticate -> newUser', newUser);
 
       return this.generateTokensProviders.generateTokens(newUser);
     } catch (error) {
