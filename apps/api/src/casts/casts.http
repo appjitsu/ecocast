@@ -1,0 +1,49 @@
+{{
+  const date = new Date();
+  exports.startDate = date.toString();
+  exports.endDate = new Date(date.setDate(date.getDate() + 1)).toString();
+}}
+
+GET {{API_URL}}/casts/
+?startDate={{startDate}}
+&endDate={{endDate}}
+&limit=10
+&page=1
+
+GET {{API_URL}}/casts/1
+
+POST {{API_URL}}/casts
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjE2LCJlbWFpbCI6ImpvaG5AZG9lLmNvbSIsImlhdCI6MTc0MjA4ODkwOCwiZXhwIjoxNzQyMDkyNTA4LCJhdWQiOiJsb2NhbGhvc3Q6MzAwMSIsImlzcyI6ImxvY2FsaG9zdDozMDAxIn0.zg5vIORBgGVDuiM2VCBK3A9UZRdOosVMAcxTG2i5pgw
+{
+  "title": "Cast 2",
+  "castCategory": "news",
+  "slug": "cast-2",
+  "status": "draft",
+  "content": "This is the content of cast 1",
+  "voice": "john",
+  "voiceOverUrl": "https://example.com/voice.mp3",
+  "scheduledFor": "{{new Date().toISOString()}}",
+  "publishedOn": "{{new Date().toISOString()}}"
+}
+
+// {
+//   "title": "Cast 3",
+//   "castCategory": "news",
+//   "slug": "cast-6",
+//   "status": "draft",
+//   "content": "This is the content of cast 1",
+//   "voice": "john",
+//   "voiceOverUrl": "https://example.com/voice.mp3",
+//   "scheduledFor": "{{new Date().toISOString()}}",
+//   "publishedOn": "{{new Date().toISOString()}}",
+//   "userId": 11
+// }
+
+PATCH {{API_URL}}/casts/1
+Content-Type: application/json
+
+{
+  "title": "New Cast",
+  "castCategory": "news"
+}
