@@ -1,3 +1,7 @@
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ['@repo/ui'],
@@ -7,6 +11,15 @@ const nextConfig = {
   optimizeFonts: process.env.NODE_ENV === 'production',
   // For better security
   poweredByHeader: false,
+  eslint: {
+    dirs: ['src', 'app', 'components', 'lib', 'utils'],
+  },
+  images: {
+    domains: ['images.unsplash.com'],
+  },
 };
 
-module.exports = nextConfig;
+/** @type {import('next').NextConfig} */
+const finalConfig = withBundleAnalyzer(nextConfig);
+
+module.exports = finalConfig;

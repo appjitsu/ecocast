@@ -1,86 +1,106 @@
-# Turborepo starter
+# EcoCast
 
-This Turborepo starter is maintained by the Turborepo core team.
+A modern web application for environmental awareness and sustainability tracking.
 
-## Using this example
+## Tech Stack
 
-Run the following command:
+- **Framework:** Next.js 14 (App Router)
+- **API:** NestJS
+- **Database:** PostgreSQL
+- **ORM:** TypeORM
+- **Authentication:** JWT + Google OAuth
+- **Styling:** Tailwind CSS
+- **State Management:** React Query + Zustand
+- **Testing:** Jest + Playwright
+- **Documentation:** Compodoc (API) + TypeDoc (Web)
 
-```sh
-npx create-turbo@latest
-```
+## Prerequisites
 
-## What's inside?
+- Node.js 20+
+- pnpm 8+
+- PostgreSQL 15+
 
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `api`: a [Nest.js](https://nestjs.com) api
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/types`: a types library shared by both `web` and `api` applications
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+## Project Structure
 
 ```
-cd my-turborepo
-pnpm build
+.
+├── apps/
+│   ├── api/          # NestJS API
+│   ├── docs/         # Documentation site
+│   └── web/          # Next.js web app
+├── packages/
+│   ├── eslint-config/    # Shared ESLint config
+│   ├── typescript-config/ # Shared TypeScript config
+│   ├── ui/              # Shared UI components
+│   ├── utils/           # Shared utilities
+│   └── types/          # Shared TypeScript types
 ```
 
-### Develop
+## Getting Started
 
-To develop all apps and packages, run the following command:
+1. Clone the repository:
 
-```
-cd my-turborepo
-pnpm dev
-```
+   ```bash
+   git clone https://github.com/yourusername/ecocast.git
+   cd ecocast
+   ```
 
-### Remote Caching
+2. Install dependencies:
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+   ```bash
+   pnpm install
+   ```
 
-Turborepo can use a technique known as [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+3. Set up environment variables:
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+   ```bash
+   cp apps/web/.env.example apps/web/.env.local
+   cp apps/api/.env.example apps/api/.env
+   ```
 
-```
-cd my-turborepo
-npx turbo login
-```
+4. Start the development servers:
+   ```bash
+   pnpm dev
+   ```
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## Development
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+- **Web App:** [http://localhost:3000](http://localhost:3000)
+- **API:** [http://localhost:3001](http://localhost:3001)
+- **API Docs:** [http://localhost:3001/docs](http://localhost:3001/docs)
+- **Component Docs:** [http://localhost:3002](http://localhost:3002)
 
-```
-npx turbo link
-```
+### Commands
 
-## Useful Links
+- `pnpm dev` - Start all applications in development mode
+- `pnpm build` - Build all applications
+- `pnpm test` - Run unit tests
+- `pnpm test:e2e` - Run end-to-end tests
+- `pnpm lint` - Lint all files
+- `pnpm format` - Format all files
 
-Learn more about the power of Turborepo:
+## Testing
 
-- [Tasks](https://turbo.build/repo/docs/core-concepts/monorepos/running-tasks)
-- [Caching](https://turbo.build/repo/docs/core-concepts/caching)
-- [Remote Caching](https://turbo.build/repo/docs/core-concepts/remote-caching)
-- [Filtering](https://turbo.build/repo/docs/core-concepts/monorepos/filtering)
-- [Configuration Options](https://turbo.build/repo/docs/reference/configuration)
-- [CLI Usage](https://turbo.build/repo/docs/reference/command-line-reference)
+- Unit tests: `pnpm test`
+- E2E tests: `pnpm test:e2e`
+- Coverage report: `pnpm test:coverage`
+
+## Deployment
+
+The application is automatically deployed through GitHub Actions:
+
+- Push to `main` - Deploys to staging
+- Create a release - Deploys to production
+
+## Contributing
+
+1. Create a new branch: `git checkout -b feature/your-feature`
+2. Make your changes
+3. Run tests: `pnpm test`
+4. Commit your changes using conventional commits
+5. Push to the branch: `git push origin feature/your-feature`
+6. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
