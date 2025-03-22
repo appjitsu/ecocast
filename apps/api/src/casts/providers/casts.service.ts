@@ -41,6 +41,7 @@ export class CastsService {
     castQuery: GetCastsDto,
   ): Promise<Paginated<Cast>> {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const casts = await this.paginationProvider.paginateQuery(
         {
           limit: castQuery.limit,
