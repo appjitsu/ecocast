@@ -6,8 +6,8 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { HashingProvider } from 'src/auth/providers/hashing.provider';
 import { Repository } from 'typeorm';
+import { HashingProvider } from '../../auth/providers/hashing.provider';
 import { CreateUserDto } from '../dtos/create-user.dto';
 import { User } from '../user.entity';
 

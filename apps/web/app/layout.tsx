@@ -1,5 +1,7 @@
+import { Providers } from '@repo/ui';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
+import { AuthProvider } from '../lib/auth/AuthContext';
 import './globals.css';
 
 const geistSans = localFont({
@@ -22,9 +24,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased bg-background text-foreground`}
+      >
+        <Providers>
+          <AuthProvider>
+            <div className="relative flex min-h-screen flex-col">
+              {children}
+            </div>
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

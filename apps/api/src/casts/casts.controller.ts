@@ -8,7 +8,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ActiveUser } from 'src/auth/decorators/active-user.decorator';
+import { ActiveUser } from '../auth/decorators/active-user.decorator';
 import { CreateCastDTO } from './dtos/create-cast.dto';
 import { GetCastsDto } from './dtos/get-casts.dto';
 import { PatchCastDTO } from './dtos/patch-cast.dto';

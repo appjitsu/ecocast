@@ -1,6 +1,6 @@
 import {
   Injectable,
-  RequestTimeoutException,
+  InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,23 +13,27 @@ export class FindOneUserByEmailProvider {
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
   ) {}
+
   public async findOneByEmail(email: string) {
     let user: User | null = null;
     try {
-      user = await this.usersRepository.findOne({
-        where: { email },
-      });
-    } catch {
-      throw new RequestTimeoutException(
-        'Unable to process your request at the moment please try later',
+      const queryBuilder = this.usersRepository
+        .createQueryBuilder('user')
+        .where('user.email = :email', { email });
+
+      user = await queryBuilder.getOne();
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Unable to process your request at the moment',
         {
-          description: 'Could not fetch the user',
+          description: 'Database error occurred',
+          cause: error instanceof Error ? error : undefined,
         },
       );
     }
 
     if (!user) {
-      throw new UnauthorizedException('User does not exist');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     return user;

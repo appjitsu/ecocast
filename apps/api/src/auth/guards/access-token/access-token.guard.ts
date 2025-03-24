@@ -7,9 +7,8 @@ import {
 } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
+import { ActiveUser, REQUEST_USER_KEY, RequestWithUser } from '@repo/types';
 import jwtConfig from '../../config/jwt.config';
-import { REQUEST_USER_KEY } from '../../constants/auth.constants';
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
@@ -20,7 +19,7 @@ export class AccessTokenGuard implements CanActivate {
   ) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // extract the request from the execution context
-    const request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
 
     // extract the token from the header
     const token = this.extractTokenFromRequest(request);
@@ -31,7 +30,7 @@ export class AccessTokenGuard implements CanActivate {
     }
 
     try {
-      const payload = await this.jwtService.verifyAsync(
+      const payload = await this.jwtService.verifyAsync<ActiveUser>(
         token,
         this.jwtConfiguration,
       );
@@ -43,7 +42,9 @@ export class AccessTokenGuard implements CanActivate {
     return true;
   }
 
-  private extractTokenFromRequest(request: Request): string | undefined {
+  private extractTokenFromRequest(
+    request: RequestWithUser,
+  ): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;
   }

@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ActiveUser, Paginated } from '@repo/types';
-import { PaginationProvider } from 'src/common/pagination/providers/pagination.provider';
-import { UsersService } from 'src/users/providers/users.service';
 import { Repository } from 'typeorm';
+import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
+import { UsersService } from '../../users/providers/users.service';
 import { Cast } from '../cast.entity';
 import { CreateCastDTO } from '../dtos/create-cast.dto';
 import { GetCastsDto } from '../dtos/get-casts.dto';
@@ -41,13 +41,16 @@ export class CastsService {
     castQuery: GetCastsDto,
   ): Promise<Paginated<Cast>> {
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const casts = await this.paginationProvider.paginateQuery(
+      const queryBuilder = this.castsRepository
+        .createQueryBuilder('cast')
+        .where('cast.ownerId = :userId', { userId });
+
+      const casts = await this.paginationProvider.paginateQuery<Cast>(
         {
           limit: castQuery.limit,
           page: castQuery.page,
         },
-        this.castsRepository,
+        queryBuilder,
       );
 
       return casts;
@@ -64,7 +67,10 @@ export class CastsService {
    * @param user
    * @returns cast
    */
-  public async create(createCastDto: CreateCastDTO, user: ActiveUser) {
+  public async create(
+    createCastDto: CreateCastDTO,
+    user: ActiveUser,
+  ): Promise<Cast> {
     return await this.createCastProvider.create(createCastDto, user);
   }
 

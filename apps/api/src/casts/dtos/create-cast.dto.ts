@@ -1,8 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  CastCategory,
+  CastStatus,
+  CastVoice,
+  ICreateCastDTO,
+} from '@repo/types';
+import {
   IsDate,
   IsEnum,
-  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -11,10 +16,8 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { castCategory } from '../enums/castCategory.enum';
-import { castStatus } from '../enums/castStatus.enum';
 
-export class CreateCastDTO {
+export class CreateCastDTO implements ICreateCastDTO {
   @ApiProperty({
     example: 'This is a title',
     description: 'This is the title for the cast',
@@ -26,12 +29,12 @@ export class CreateCastDTO {
   title: string;
 
   @ApiProperty({
-    enum: castCategory,
-    description: "Possible values, 'cast', 'page', 'story', 'series'",
+    description: 'The category of the cast',
+    enum: CastCategory,
   })
-  @IsEnum(castCategory)
+  @IsEnum(CastCategory)
   @IsNotEmpty()
-  castCategory: castCategory;
+  castCategory: CastCategory;
 
   @ApiProperty({
     description: "For Example - 'my-url'",
@@ -48,12 +51,12 @@ export class CreateCastDTO {
   slug: string;
 
   @ApiProperty({
-    enum: castStatus,
-    description: "Possible values 'draft', 'scheduled', 'review', 'published'",
+    description: 'The status of the cast',
+    enum: CastStatus,
   })
-  @IsEnum(castStatus)
+  @IsEnum(CastStatus)
   @IsNotEmpty()
-  status: castStatus;
+  status: CastStatus;
 
   @ApiPropertyOptional({
     description: 'This is the content of the cast',
@@ -65,12 +68,11 @@ export class CreateCastDTO {
 
   @ApiPropertyOptional({
     description: 'Voice of the cast narration',
-    example: 'john',
+    enum: CastVoice,
   })
   @IsOptional()
-  @IsString()
-  @IsEnum(['john', 'jane'])
-  voice?: string;
+  @IsEnum(CastVoice)
+  voice?: CastVoice;
 
   @ApiPropertyOptional({
     description: 'Voice over URL of the cast',

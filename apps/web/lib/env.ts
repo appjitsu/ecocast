@@ -1,21 +1,21 @@
+import { WebEnv } from '@repo/types';
 import { z } from 'zod';
 
 const envSchema = z.object({
-  // Add environment variables with their types and validation
   NODE_ENV: z.enum(['development', 'production', 'test']),
   NEXT_PUBLIC_API_URL: z.string().url(),
-  // Add more environment variables as needed
-});
-
-type Env = z.infer<typeof envSchema>;
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  ANALYZE: z.enum(['true', 'false']).optional(),
+}) satisfies z.ZodType<WebEnv>;
 
 // Validate environment variables at build/startup time
-const validateEnv = (): Env => {
+const validateEnv = (): WebEnv => {
   try {
     const parsed = envSchema.parse({
       NODE_ENV: process.env.NODE_ENV,
       NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-      // Add more environment variables as needed
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      ANALYZE: process.env.ANALYZE as 'true' | 'false' | undefined,
     });
     return parsed;
   } catch (error: unknown) {

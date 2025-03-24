@@ -1,8 +1,8 @@
 import { Body, Controller } from '@nestjs/common';
-import { GoogleAuthenticationService } from './providers/google-authentication.service';
-import { GoogleTokenDto } from './dtos/google-token.dto';
+import { AuthType } from '@repo/types';
 import { Auth } from '../decorators/auth.decorator';
-import { AuthType } from '../enums/auth-type.enum';
+import { GoogleTokenDto } from './dtos/google-token.dto';
+import { GoogleAuthenticationService } from './providers/google-authentication.service';
 
 @Auth(AuthType.None)
 @Controller('google-authentication')

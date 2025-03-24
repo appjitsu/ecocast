@@ -1,14 +1,12 @@
 import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { CastCategory, CastStatus, CastVoice } from '@repo/types';
 import { Repository } from 'typeorm';
 import { UsersService } from '../../users/providers/users.service';
 import { User } from '../../users/user.entity';
 import { Cast } from '../cast.entity';
 import { CreateCastDTO } from '../dtos/create-cast.dto';
-import { castCategory } from '../enums/castCategory.enum';
-import { castStatus } from '../enums/castStatus.enum';
-import { castVoice } from '../enums/castVoice.enum';
 import { CreateCastProvider } from './create-cast.provider';
 
 describe('CreateCastProvider', () => {
@@ -28,11 +26,11 @@ describe('CreateCastProvider', () => {
   const mockCast: Cast = {
     id: 1,
     title: 'Test Cast',
-    castCategory: castCategory.NEWS,
+    castCategory: CastCategory.NEWS,
     slug: 'test-cast',
-    status: castStatus.DRAFT,
+    status: CastStatus.DRAFT,
     content: 'Test content',
-    voice: castVoice.JOHN,
+    voice: CastVoice.JOHN,
     voiceOverUrl: 'https://example.com/voice.mp3',
     featuredImageUrl: 'https://example.com/image.jpg',
     scheduledFor: new Date(),
@@ -72,11 +70,11 @@ describe('CreateCastProvider', () => {
   describe('create', () => {
     const createCastDto: CreateCastDTO = {
       title: 'Test Cast',
-      castCategory: castCategory.NEWS,
+      castCategory: CastCategory.NEWS,
       slug: 'test-cast',
-      status: castStatus.DRAFT,
+      status: CastStatus.DRAFT,
       content: 'Test content',
-      voice: castVoice.JOHN,
+      voice: CastVoice.JOHN,
       voiceOverUrl: 'https://example.com/voice.mp3',
       featuredImageUrl: 'https://example.com/image.jpg',
       scheduledFor: new Date(),

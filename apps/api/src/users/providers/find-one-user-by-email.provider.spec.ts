@@ -1,4 +1,7 @@
-import { RequestTimeoutException, UnauthorizedException } from '@nestjs/common';
+import {
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -8,15 +11,24 @@ import { FindOneUserByEmailProvider } from './find-one-user-by-email.provider';
 describe('FindOneUserByEmailProvider', () => {
   let provider: FindOneUserByEmailProvider;
   let usersRepository: Repository<User>;
+  let mockQueryBuilder: any;
 
   beforeEach(async () => {
+    mockQueryBuilder = {
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn(),
+      getSql: jest
+        .fn()
+        .mockReturnValue('SELECT * FROM "user" WHERE "email" = $1'),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FindOneUserByEmailProvider,
         {
           provide: getRepositoryToken(User),
           useValue: {
-            findOne: jest.fn(),
+            createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
           },
         },
       ],
@@ -42,38 +54,42 @@ describe('FindOneUserByEmailProvider', () => {
     };
 
     it('should find a user by email successfully', async () => {
-      jest
-        .spyOn(usersRepository, 'findOne')
-        .mockResolvedValue(mockUser as User);
+      mockQueryBuilder.getOne.mockResolvedValue(mockUser);
 
       const result = await provider.findOneByEmail(email);
 
-      expect(usersRepository.findOne).toHaveBeenCalledWith({
-        where: { email },
-      });
+      expect(usersRepository.createQueryBuilder).toHaveBeenCalledWith('user');
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'user.email = :email',
+        { email },
+      );
       expect(result).toEqual(mockUser);
     });
 
     it('should throw UnauthorizedException if user not found', async () => {
-      jest.spyOn(usersRepository, 'findOne').mockResolvedValue(null);
+      mockQueryBuilder.getOne.mockResolvedValue(null);
 
       await expect(provider.findOneByEmail(email)).rejects.toThrow(
         UnauthorizedException,
       );
-      expect(usersRepository.findOne).toHaveBeenCalledWith({
-        where: { email },
-      });
+      expect(usersRepository.createQueryBuilder).toHaveBeenCalledWith('user');
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'user.email = :email',
+        { email },
+      );
     });
 
-    it('should throw RequestTimeoutException on database error', async () => {
-      jest.spyOn(usersRepository, 'findOne').mockRejectedValue(new Error());
+    it('should throw InternalServerErrorException on database error', async () => {
+      mockQueryBuilder.getOne.mockRejectedValue(new Error('Database error'));
 
       await expect(provider.findOneByEmail(email)).rejects.toThrow(
-        RequestTimeoutException,
+        InternalServerErrorException,
       );
-      expect(usersRepository.findOne).toHaveBeenCalledWith({
-        where: { email },
-      });
+      expect(usersRepository.createQueryBuilder).toHaveBeenCalledWith('user');
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'user.email = :email',
+        { email },
+      );
     });
   });
 });

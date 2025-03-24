@@ -1,8 +1,8 @@
 import { BadRequestException, RequestTimeoutException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { HashingProvider } from 'src/auth/providers/hashing.provider';
 import { Repository } from 'typeorm';
+import { HashingProvider } from '../../auth/providers/hashing.provider';
 import { User } from '../user.entity';
 import { CreateUserProvider } from './create-user.provider';
 

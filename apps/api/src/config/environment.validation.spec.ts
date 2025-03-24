@@ -1,3 +1,4 @@
+import { ZodError } from 'zod';
 import environmentValidation from './environment.validation';
 
 describe('EnvironmentValidation', () => {
@@ -19,13 +20,18 @@ describe('EnvironmentValidation', () => {
       VOICE_API_KEY: 'voice-key',
     };
 
-    const { error, value } = environmentValidation.validate(validEnv);
-    expect(error).toBeUndefined();
-    expect(value).toEqual({
-      ...validEnv,
-      JWT_ACCESS_TOKEN_TTL: 3600,
-      JWT_REFRESH_TOKEN_TTL: 86400,
-    });
+    const result = environmentValidation.safeParse(validEnv);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual({
+        ...validEnv,
+        JWT_ACCESS_TOKEN_TTL: 3600,
+        JWT_REFRESH_TOKEN_TTL: 86400,
+        PORT: 3001,
+        THROTTLE_TTL: 60,
+        THROTTLE_LIMIT: 10,
+      });
+    }
   });
 
   it('should use default values when optional variables are not provided', () => {
@@ -44,15 +50,20 @@ describe('EnvironmentValidation', () => {
       VOICE_API_KEY: 'voice-key',
     };
 
-    const { error, value } = environmentValidation.validate(minimalEnv);
-    expect(error).toBeUndefined();
-    expect(value).toEqual({
-      ...minimalEnv,
-      NODE_ENV: 'development',
-      DATABASE_PORT: 5432,
-      JWT_ACCESS_TOKEN_TTL: 3600,
-      JWT_REFRESH_TOKEN_TTL: 86400,
-    });
+    const result = environmentValidation.safeParse(minimalEnv);
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data).toEqual({
+        ...minimalEnv,
+        NODE_ENV: 'development',
+        DATABASE_PORT: 5432,
+        JWT_ACCESS_TOKEN_TTL: 3600,
+        JWT_REFRESH_TOKEN_TTL: 86400,
+        PORT: 3001,
+        THROTTLE_TTL: 60,
+        THROTTLE_LIMIT: 10,
+      });
+    }
   });
 
   it('should validate NODE_ENV values', () => {
@@ -72,9 +83,12 @@ describe('EnvironmentValidation', () => {
       VOICE_API_KEY: 'voice-key',
     };
 
-    const { error } = environmentValidation.validate(env);
-    expect(error).toBeDefined();
-    expect(error?.details[0].message).toContain('"NODE_ENV" must be one of');
+    const result = environmentValidation.safeParse(env);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(ZodError);
+      expect(result.error.errors[0].message).toContain('Invalid enum value');
+    }
   });
 
   it('should validate DATABASE_PORT as a valid port number', () => {
@@ -95,11 +109,14 @@ describe('EnvironmentValidation', () => {
       VOICE_API_KEY: 'voice-key',
     };
 
-    const { error } = environmentValidation.validate(env);
-    expect(error).toBeDefined();
-    expect(error?.details[0].message).toContain(
-      '"DATABASE_PORT" must be a valid port',
-    );
+    const result = environmentValidation.safeParse(env);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(ZodError);
+      expect(result.error.errors[0].message).toContain(
+        'Number must be less than or equal to 65535',
+      );
+    }
   });
 
   it('should require all mandatory environment variables', () => {
@@ -108,9 +125,12 @@ describe('EnvironmentValidation', () => {
       DATABASE_HOST: 'localhost',
     };
 
-    const { error } = environmentValidation.validate(incompleteEnv);
-    expect(error).toBeDefined();
-    expect(error?.details.length).toBeGreaterThan(0);
+    const result = environmentValidation.safeParse(incompleteEnv);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(ZodError);
+      expect(result.error.errors.length).toBeGreaterThan(0);
+    }
   });
 
   it('should validate JWT token TTL values as numbers', () => {
@@ -132,10 +152,11 @@ describe('EnvironmentValidation', () => {
       VOICE_API_KEY: 'voice-key',
     };
 
-    const { error } = environmentValidation.validate(env);
-    expect(error).toBeDefined();
-    expect(error?.details[0].message).toContain(
-      '"JWT_ACCESS_TOKEN_TTL" must be a number',
-    );
+    const result = environmentValidation.safeParse(env);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBeInstanceOf(ZodError);
+      expect(result.error.errors[0].message).toContain('Expected number');
+    }
   });
 });

@@ -1,7 +1,7 @@
 import { BadRequestException, RequestTimeoutException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Paginated } from '@repo/types';
+import { CastCategory, CastStatus, CastVoice, Paginated } from '@repo/types';
 import { Repository } from 'typeorm';
 import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
 import { UsersService } from '../../users/providers/users.service';
@@ -9,9 +9,6 @@ import { Cast } from '../cast.entity';
 import { CreateCastDTO } from '../dtos/create-cast.dto';
 import { GetCastsDto } from '../dtos/get-casts.dto';
 import { PatchCastDTO } from '../dtos/patch-cast.dto';
-import { castCategory } from '../enums/castCategory.enum';
-import { castStatus } from '../enums/castStatus.enum';
-import { castVoice } from '../enums/castVoice.enum';
 import { CastsService } from './casts.service';
 import { CreateCastProvider } from './create-cast.provider';
 
@@ -34,11 +31,11 @@ describe('CastsService', () => {
   const mockCast: Cast = {
     id: 1,
     title: 'Test Cast',
-    castCategory: castCategory.NEWS,
+    castCategory: CastCategory.NEWS,
     slug: 'test-cast',
-    status: castStatus.DRAFT,
+    status: CastStatus.DRAFT,
     content: 'Test content',
-    voice: castVoice.JOHN,
+    voice: CastVoice.JOHN,
     voiceOverUrl: 'https://example.com/voice.mp3',
     featuredImageUrl: 'https://example.com/image.jpg',
     scheduledFor: new Date(),
@@ -55,6 +52,9 @@ describe('CastsService', () => {
           useValue: {
             findOneBy: jest.fn(),
             save: jest.fn(),
+            createQueryBuilder: jest.fn().mockReturnValue({
+              where: jest.fn().mockReturnThis(),
+            }),
           },
         },
         {
@@ -72,7 +72,9 @@ describe('CastsService', () => {
         {
           provide: CreateCastProvider,
           useValue: {
-            create: jest.fn(),
+            create: jest
+              .fn()
+              .mockImplementation((dto, user) => Promise.resolve(mockCast)),
           },
         },
       ],
@@ -99,6 +101,10 @@ describe('CastsService', () => {
         endDate: new Date(),
       };
 
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+      };
+
       const paginatedResponse: Paginated<Cast> = {
         data: [mockCast],
         meta: {
@@ -117,18 +123,27 @@ describe('CastsService', () => {
       };
 
       jest
+        .spyOn(castsRepository, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any);
+
+      jest
         .spyOn(paginationProvider, 'paginateQuery')
         .mockResolvedValue(paginatedResponse);
 
       const result = await service.findAll(userId, getCastsDto);
 
       expect(result).toEqual(paginatedResponse);
+      expect(castsRepository.createQueryBuilder).toHaveBeenCalledWith('cast');
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'cast.ownerId = :userId',
+        { userId },
+      );
       expect(paginationProvider.paginateQuery).toHaveBeenCalledWith(
         {
           limit: getCastsDto.limit,
           page: getCastsDto.page,
         },
-        castsRepository,
+        mockQueryBuilder,
       );
     });
 
@@ -138,6 +153,14 @@ describe('CastsService', () => {
         page: 1,
         limit: 10,
       };
+
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+      };
+
+      jest
+        .spyOn(castsRepository, 'createQueryBuilder')
+        .mockReturnValue(mockQueryBuilder as any);
 
       jest
         .spyOn(paginationProvider, 'paginateQuery')
@@ -153,11 +176,11 @@ describe('CastsService', () => {
     it('should create a new cast', async () => {
       const createCastDto: CreateCastDTO = {
         title: 'Test Cast',
-        castCategory: castCategory.NEWS,
+        castCategory: CastCategory.NEWS,
         slug: 'test-cast',
-        status: castStatus.DRAFT,
+        status: CastStatus.DRAFT,
         content: 'Test content',
-        voice: castVoice.JOHN,
+        voice: CastVoice.JOHN,
         voiceOverUrl: 'https://example.com/voice.mp3',
         featuredImageUrl: 'https://example.com/image.jpg',
         scheduledFor: new Date(),
@@ -186,7 +209,7 @@ describe('CastsService', () => {
       const castId = 1;
       const patchCastDto: PatchCastDTO = {
         title: 'Updated Cast',
-        castCategory: castCategory.TECHNOLOGY,
+        castCategory: CastCategory.TECH,
       };
 
       const updatedCast: Cast = {

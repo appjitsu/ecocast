@@ -1,8 +1,8 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
+import { AuthType } from '@repo/types';
 import { AUTH_TYPE_KEY } from '../../constants/auth.constants';
-import { AuthType } from '../../enums/auth-type.enum';
 import { AccessTokenGuard } from '../access-token/access-token.guard';
 import { AuthenticationGuard } from './authentication.guard';
 

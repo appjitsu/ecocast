@@ -10,6 +10,10 @@ import { UsersController } from './users.controller';
 describe('UsersController', () => {
   let controller: UsersController;
   let usersService: UsersService;
+  let getUsers: (id: number) => Promise<User>;
+  let createUsers: (dto: CreateUserDto) => Promise<User>;
+  let createManyUsers: (dto: CreateManyUsersDto) => Promise<User[]>;
+  let patchUser: (dto: PatchUserDto) => PatchUserDto;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -28,6 +32,12 @@ describe('UsersController', () => {
 
     controller = module.get<UsersController>(UsersController);
     usersService = module.get<UsersService>(UsersService);
+
+    // Bind controller methods
+    getUsers = controller.getUsers.bind(controller);
+    createUsers = controller.createUsers.bind(controller);
+    createManyUsers = controller.createManyUsers.bind(controller);
+    patchUser = controller.patchUser.bind(controller);
   });
 
   it('should be defined', () => {
@@ -48,7 +58,7 @@ describe('UsersController', () => {
 
       jest.spyOn(usersService, 'findOneById').mockResolvedValue(mockUser);
 
-      const result = await controller.getUsers(userId);
+      const result = await getUsers(userId);
 
       expect(result).toEqual(mockUser);
       expect(usersService.findOneById).toHaveBeenCalledWith(userId);
@@ -75,7 +85,7 @@ describe('UsersController', () => {
 
       jest.spyOn(usersService, 'createUser').mockResolvedValue(mockUser);
 
-      const result = await controller.createUsers(createUserDto);
+      const result = await createUsers(createUserDto);
 
       expect(result).toEqual(mockUser);
       expect(usersService.createUser).toHaveBeenCalledWith(createUserDto);
@@ -112,7 +122,7 @@ describe('UsersController', () => {
 
       jest.spyOn(usersService, 'createMany').mockResolvedValue(mockUsers);
 
-      const result = await controller.createManyUsers(createManyUsersDto);
+      const result = await createManyUsers(createManyUsersDto);
 
       expect(result).toEqual(mockUsers);
       expect(usersService.createMany).toHaveBeenCalledWith(createManyUsersDto);
@@ -120,13 +130,13 @@ describe('UsersController', () => {
   });
 
   describe('patchUser', () => {
-    it('should patch a user', async () => {
+    it('should patch a user', () => {
       const patchUserDto: PatchUserDto = {
         firstName: 'Updated',
         lastName: 'User',
       };
 
-      const result = controller.patchUser(patchUserDto);
+      const result = patchUser(patchUserDto);
 
       expect(result).toEqual(patchUserDto);
     });

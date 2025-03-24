@@ -29,7 +29,7 @@ jest.mock('@repo/ui/button', () => ({
     appName: string;
     onClick?: () => void;
     type?: 'button' | 'submit' | 'reset';
-    [key: string]: any;
+    [key: string]: string | ReactNode | undefined | (() => void);
   }) => (
     <button
       className={className}

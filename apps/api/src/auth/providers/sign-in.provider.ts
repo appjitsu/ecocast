@@ -2,10 +2,9 @@ import {
   forwardRef,
   Inject,
   Injectable,
-  RequestTimeoutException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { UsersService } from 'src/users/providers/users.service';
+import { UsersService } from '../../users/providers/users.service';
 import { SignInDto } from '../dtos/signin.dto';
 import { GenerateTokensProvider } from './generate-tokens.provider';
 import { HashingProvider } from './hashing.provider';
@@ -33,14 +32,12 @@ export class SignInProvider {
         body.password,
         user.password,
       );
-    } catch (error) {
-      throw new RequestTimeoutException(error, {
-        description: 'Could not compare the password',
-      });
+    } catch {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     if (!isMatch) {
-      throw new RequestTimeoutException('Incorrect password');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     // generate tokens

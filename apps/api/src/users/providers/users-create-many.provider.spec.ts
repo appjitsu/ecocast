@@ -1,7 +1,7 @@
 import { ConflictException, RequestTimeoutException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { HashingProvider } from 'src/auth/providers/hashing.provider';
 import { DataSource, QueryRunner } from 'typeorm';
+import { HashingProvider } from '../../auth/providers/hashing.provider';
 import { UsersCreateManyProvider } from './users-create-many.provider';
 
 describe('UsersCreateManyProvider', () => {

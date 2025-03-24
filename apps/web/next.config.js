@@ -1,4 +1,6 @@
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
+import bundleAnalyzer from '@next/bundle-analyzer';
+
+const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
@@ -7,19 +9,24 @@ const nextConfig = {
   transpilePackages: ['@repo/ui'],
   output: 'standalone',
   reactStrictMode: true,
-  // Improve build times in development
-  optimizeFonts: process.env.NODE_ENV === 'production',
   // For better security
   poweredByHeader: false,
   eslint: {
     dirs: ['src', 'app', 'components', 'lib', 'utils'],
   },
   images: {
-    domains: ['images.unsplash.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
 };
 
 /** @type {import('next').NextConfig} */
 const finalConfig = withBundleAnalyzer(nextConfig);
 
-module.exports = finalConfig;
+export default finalConfig;

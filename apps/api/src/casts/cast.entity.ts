@@ -1,8 +1,6 @@
-import { User } from 'src/users/user.entity';
+import { CastCategory, CastStatus, CastVoice } from '@repo/types';
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
-import { castCategory } from './enums/castCategory.enum';
-import { castStatus } from './enums/castStatus.enum';
-import { castVoice } from './enums/castVoice.enum';
+import { User } from '../users/user.entity';
 
 @Entity()
 export class Cast {
@@ -18,11 +16,16 @@ export class Cast {
 
   @Column({
     type: 'enum',
-    enum: castCategory,
-    default: castCategory.NEWS,
+    enum: CastCategory,
+    enumName: 'cast_category_enum',
+    default: CastCategory.NEWS,
     nullable: false,
+    transformer: {
+      to: (value: CastCategory) => value.toLowerCase(),
+      from: (value: string) => value as CastCategory,
+    },
   })
-  castCategory: castCategory;
+  castCategory: CastCategory;
 
   @Column({
     type: 'varchar',
@@ -34,11 +37,11 @@ export class Cast {
 
   @Column({
     type: 'enum',
-    enum: castStatus,
-    default: castStatus.DRAFT,
+    enum: CastStatus,
+    default: CastStatus.DRAFT,
     nullable: false,
   })
-  status: castStatus;
+  status: CastStatus;
 
   @Column({
     type: 'text',
@@ -48,10 +51,10 @@ export class Cast {
 
   @Column({
     type: 'enum',
-    enum: castVoice,
-    default: castVoice.JOHN,
+    enum: CastVoice,
+    default: CastVoice.JOHN,
   })
-  voice?: string;
+  voice: CastVoice;
 
   @Column({
     type: 'varchar',

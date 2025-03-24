@@ -1,14 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Paginated } from '@repo/types';
+import { CastCategory, CastStatus, CastVoice, Paginated } from '@repo/types';
 import { User } from '../users/user.entity';
 import { Cast } from './cast.entity';
 import { CastsController } from './casts.controller';
 import { CreateCastDTO } from './dtos/create-cast.dto';
 import { GetCastsDto } from './dtos/get-casts.dto';
 import { PatchCastDTO } from './dtos/patch-cast.dto';
-import { castCategory } from './enums/castCategory.enum';
-import { castStatus } from './enums/castStatus.enum';
-import { castVoice } from './enums/castVoice.enum';
 import { CastsService } from './providers/casts.service';
 
 describe('CastsController', () => {
@@ -27,11 +24,11 @@ describe('CastsController', () => {
   const mockCast: Cast = {
     id: 1,
     title: 'Test Cast',
-    castCategory: castCategory.NEWS,
+    castCategory: CastCategory.NEWS,
     slug: 'test-cast',
-    status: castStatus.DRAFT,
+    status: CastStatus.DRAFT,
     content: 'Test content',
-    voice: castVoice.JOHN,
+    voice: CastVoice.JOHN,
     voiceOverUrl: 'https://example.com/voice.mp3',
     featuredImageUrl: 'https://example.com/image.jpg',
     scheduledFor: new Date(),
@@ -47,7 +44,9 @@ describe('CastsController', () => {
           provide: CastsService,
           useValue: {
             findAll: jest.fn(),
-            create: jest.fn(),
+            create: jest
+              .fn()
+              .mockImplementation((dto, user) => Promise.resolve(mockCast)),
             update: jest.fn(),
           },
         },
@@ -102,11 +101,11 @@ describe('CastsController', () => {
     it('should create a new cast', async () => {
       const createCastDto: CreateCastDTO = {
         title: 'Test Cast',
-        castCategory: castCategory.NEWS,
+        castCategory: CastCategory.NEWS,
         slug: 'test-cast',
-        status: castStatus.DRAFT,
+        status: CastStatus.DRAFT,
         content: 'Test content',
-        voice: castVoice.JOHN,
+        voice: CastVoice.JOHN,
         voiceOverUrl: 'https://example.com/voice.mp3',
         featuredImageUrl: 'https://example.com/image.jpg',
         scheduledFor: new Date(),
@@ -135,7 +134,7 @@ describe('CastsController', () => {
       const castId = 1;
       const patchCastDto: PatchCastDTO = {
         title: 'Updated Cast',
-        castCategory: castCategory.TECHNOLOGY,
+        castCategory: CastCategory.TECH,
       };
 
       const updatedCast: Cast = {

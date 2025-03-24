@@ -1,0 +1,48 @@
+                                                         List of data types
+ Schema |          Name          |     Internal name      | Size |       Elements       |  Owner   | Access privileges | Description 
+--------+------------------------+------------------------+------+----------------------+----------+-------------------+-------------
+ public | cast_castcategory_enum | cast_castcategory_enum | 4    | politics            +| postgres |                   | 
+        |                        |                        |      | technology          +|          |                   | 
+        |                        |                        |      | health              +|          |                   | 
+        |                        |                        |      | entertainment       +|          |                   | 
+        |                        |                        |      | sports              +|          |                   | 
+        |                        |                        |      | business            +|          |                   | 
+        |                        |                        |      | education           +|          |                   | 
+        |                        |                        |      | lifestyle           +|          |                   | 
+        |                        |                        |      | travel              +|          |                   | 
+        |                        |                        |      | food                +|          |                   | 
+        |                        |                        |      | finance             +|          |                   | 
+        |                        |                        |      | science             +|          |                   | 
+        |                        |                        |      | art                 +|          |                   | 
+        |                        |                        |      | culture             +|          |                   | 
+        |                        |                        |      | religion            +|          |                   | 
+        |                        |                        |      | history             +|          |                   | 
+        |                        |                        |      | fashion             +|          |                   | 
+        |                        |                        |      | music               +|          |                   | 
+        |                        |                        |      | movies              +|          |                   | 
+        |                        |                        |      | books               +|          |                   | 
+        |                        |                        |      | podcasts            +|          |                   | 
+        |                        |                        |      | games               +|          |                   | 
+        |                        |                        |      | news                +|          |                   | 
+        |                        |                        |      | comedy              +|          |                   | 
+        |                        |                        |      | philosophy          +|          |                   | 
+        |                        |                        |      | environment         +|          |                   | 
+        |                        |                        |      | animals             +|          |                   | 
+        |                        |                        |      | personal-development+|          |                   | 
+        |                        |                        |      | self-help           +|          |                   | 
+        |                        |                        |      | relationships       +|          |                   | 
+        |                        |                        |      | parenting           +|          |                   | 
+        |                        |                        |      | career              +|          |                   | 
+        |                        |                        |      | technology-tips     +|          |                   | 
+        |                        |                        |      | social-media        +|          |                   | 
+        |                        |                        |      | marketing           +|          |                   | 
+        |                        |                        |      | entrepreneurship    +|          |                   | 
+        |                        |                        |      | real-estate         +|          |                   | 
+        |                        |                        |      | investing           +|          |                   | 
+        |                        |                        |      | cryptocurrency      +|          |                   | 
+        |                        |                        |      | computing           +|          |                   | 
+        |                        |                        |      | ai                  +|          |                   | 
+        |                        |                        |      | blockchain          +|          |                   | 
+        |                        |                        |      | cybersecurity        |          |                   | 
+(1 row)
+

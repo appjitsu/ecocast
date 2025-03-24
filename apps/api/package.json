@@ -18,7 +18,15 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "doc": "npx @compodoc/compodoc -p tsconfig.json -s --port 3002 --watch -d ./documentation"
+    "doc": "npx @compodoc/compodoc -p tsconfig.json -s --port 3002 --watch -d ./documentation",
+    "seed": "ts-node src/database/seed.ts",
+    "typeorm": "typeorm-ts-node-commonjs",
+    "migration:generate": "npm run typeorm -- migration:generate -d src/database/data-source.ts",
+    "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
+    "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
+    "migration:show": "npm run typeorm -- migration:show -d src/database/data-source.ts",
+    "migrate": "ts-node src/database/startup.ts",
+    "migrate:direct": "ts-node src/database/run-migration.ts"
   },
   "dependencies": {
     "@nestjs/config": "^4.0.1",
@@ -48,7 +56,8 @@
     "rxjs": "^7.8.2",
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.21",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@compodoc/compodoc": "^1.1.26",
@@ -60,13 +69,13 @@
     "@nestjs/schematics": "^11.0.2",
     "@nestjs/testing": "^11.0.12",
     "@swc/cli": "^0.6.0",
-    "@swc/core": "^1.11.11",
+    "@swc/core": "^1.11.12",
     "@swc/jest": "^0.2.37",
     "@types/express": "^5.0.1",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.13.11",
     "@types/supertest": "^6.0.2",
-    "concurrently": "^8.2.2",
+    "concurrently": "^9.1.2",
     "eslint": "^9.23.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.3",

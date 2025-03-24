@@ -3,8 +3,8 @@ import {
   Injectable,
   RequestTimeoutException,
 } from '@nestjs/common';
-import { HashingProvider } from 'src/auth/providers/hashing.provider';
 import { DataSource, QueryRunner } from 'typeorm';
+import { HashingProvider } from '../../auth/providers/hashing.provider';
 import { CreateManyUsersDto } from '../dtos/create-many-users.dto';
 import { User } from '../user.entity';
 
