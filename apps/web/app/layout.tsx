@@ -1,6 +1,10 @@
-import { Providers } from '@repo/ui';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
+import Footer from '../components/marketing/Footer';
+import GoToTopButton from '../components/marketing/GoToTopButton';
+import Header from '../components/marketing/Header';
+import { Providers } from '../components/providers';
+import { ThemeProvider } from '../components/theme-provider';
 import { AuthProvider } from '../lib/auth/AuthContext';
 import './globals.css';
 
@@ -31,13 +35,23 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen font-sans antialiased bg-background text-foreground`}
       >
-        <Providers>
-          <AuthProvider>
-            <div className="relative flex min-h-screen flex-col">
-              {children}
-            </div>
-          </AuthProvider>
-        </Providers>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <Providers>
+            <AuthProvider>
+              <div className="relative flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-1">{children}</main>
+                <Footer />
+              </div>
+              <GoToTopButton />
+            </AuthProvider>
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

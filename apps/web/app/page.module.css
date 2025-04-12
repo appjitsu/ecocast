@@ -1,11 +1,4 @@
 .page {
-  --gray-rgb: 0, 0, 0;
-  --gray-alpha-200: rgba(var(--gray-rgb), 0.08);
-  --gray-alpha-100: rgba(var(--gray-rgb), 0.05);
-
-  --button-primary-hover: #383838;
-  --button-secondary-hover: #f2f2f2;
-
   display: grid;
   grid-template-rows: 20px 1fr 20px;
   align-items: center;
@@ -14,17 +7,6 @@
   padding: 80px;
   gap: 64px;
   font-synthesis: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .page {
-    --gray-rgb: 255, 255, 255;
-    --gray-alpha-200: rgba(var(--gray-rgb), 0.145);
-    --gray-alpha-100: rgba(var(--gray-rgb), 0.06);
-
-    --button-primary-hover: #ccc;
-    --button-secondary-hover: #1a1a1a;
-  }
 }
 
 .main {
@@ -50,7 +32,7 @@
 
 .main code {
   font-family: inherit;
-  background: var(--gray-alpha-100);
+  background: rgba(0, 0, 0, 0.05);
   padding: 2px 4px;
   border-radius: 4px;
   font-weight: 600;
@@ -69,7 +51,10 @@
   border: none;
   font-family: var(--font-geist-sans);
   border: 1px solid transparent;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -80,13 +65,13 @@
 }
 
 a.primary {
-  background: var(--foreground);
-  color: var(--background);
+  background: #000;
+  color: #fff;
   gap: 8px;
 }
 
 a.secondary {
-  border-color: var(--gray-alpha-200);
+  border-color: rgba(0, 0, 0, 0.08);
   min-width: 180px;
 }
 
@@ -98,7 +83,10 @@ button.secondary {
   border: none;
   font-family: var(--font-geist-sans);
   border: 1px solid transparent;
-  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -107,7 +95,7 @@ button.secondary {
   line-height: 20px;
   font-weight: 500;
   background: transparent;
-  border-color: var(--gray-alpha-200);
+  border-color: rgba(0, 0, 0, 0.08);
   min-width: 180px;
 }
 
@@ -131,12 +119,12 @@ button.secondary {
 /* Enable hover only on non-touch devices */
 @media (hover: hover) and (pointer: fine) {
   a.primary:hover {
-    background: var(--button-primary-hover);
+    background: #383838;
     border-color: transparent;
   }
 
   a.secondary:hover {
-    background: var(--button-secondary-hover);
+    background: #f2f2f2;
     border-color: transparent;
   }
 
@@ -184,5 +172,17 @@ button.secondary {
 @media (prefers-color-scheme: dark) {
   .logo {
     filter: invert();
+  }
+
+  .main code {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  a.primary:hover {
+    background: #ccc;
+  }
+
+  a.secondary:hover {
+    background: #1a1a1a;
   }
 }
