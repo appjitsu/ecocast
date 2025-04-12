@@ -5,17 +5,28 @@ import { Repository } from 'typeorm';
 import { PaginationQueryDto } from '../dtos/pagination-query.dto';
 import { PaginationProvider } from './pagination.provider';
 
+interface MockRequest extends Partial<Request> {
+  headers: {
+    host: string;
+  };
+}
+
+interface MockEntity {
+  id: number;
+  name: string;
+}
+
 describe('PaginationProvider', () => {
   let provider: PaginationProvider;
-  let mockRequest: Partial<Request>;
-  let mockRepository: Partial<Repository<any>>;
+  let mockRequest: MockRequest;
+  let mockRepository: Partial<Repository<MockEntity>>;
 
   beforeEach(async () => {
     mockRequest = {
       protocol: 'http',
       headers: {
         host: 'localhost:3000',
-      } as any,
+      },
       url: '/api/casts',
     };
 
@@ -48,7 +59,7 @@ describe('PaginationProvider', () => {
         limit: 5,
       };
 
-      const mockData = [
+      const mockData: MockEntity[] = [
         { id: 1, name: 'Item 1' },
         { id: 2, name: 'Item 2' },
       ];
@@ -58,7 +69,7 @@ describe('PaginationProvider', () => {
 
       const result = await provider.paginateQuery(
         paginationQuery,
-        mockRepository as Repository<any>,
+        mockRepository as Repository<MockEntity>,
       );
 
       expect(result).toBeDefined();
@@ -98,13 +109,13 @@ describe('PaginationProvider', () => {
     it('should use default pagination values when not provided', async () => {
       const paginationQuery: PaginationQueryDto = {};
 
-      const mockData = [{ id: 1, name: 'Item 1' }];
+      const mockData: MockEntity[] = [{ id: 1, name: 'Item 1' }];
       (mockRepository.find as jest.Mock).mockResolvedValue(mockData);
       (mockRepository.count as jest.Mock).mockResolvedValue(1);
 
       const result = await provider.paginateQuery(
         paginationQuery,
-        mockRepository as Repository<any>,
+        mockRepository as Repository<MockEntity>,
       );
 
       expect(result.meta.itemsPerPage).toBe(10); // Default limit
@@ -121,13 +132,13 @@ describe('PaginationProvider', () => {
         limit: 5,
       };
 
-      const mockData = [{ id: 11, name: 'Item 11' }];
+      const mockData: MockEntity[] = [{ id: 11, name: 'Item 11' }];
       (mockRepository.find as jest.Mock).mockResolvedValue(mockData);
       (mockRepository.count as jest.Mock).mockResolvedValue(11);
 
       const result = await provider.paginateQuery(
         paginationQuery,
-        mockRepository as Repository<any>,
+        mockRepository as Repository<MockEntity>,
       );
 
       expect(result.meta.totalPages).toBe(3);
@@ -145,13 +156,13 @@ describe('PaginationProvider', () => {
         limit: 5,
       };
 
-      const mockData = [{ id: 1, name: 'Item 1' }];
+      const mockData: MockEntity[] = [{ id: 1, name: 'Item 1' }];
       (mockRepository.find as jest.Mock).mockResolvedValue(mockData);
       (mockRepository.count as jest.Mock).mockResolvedValue(11);
 
       const result = await provider.paginateQuery(
         paginationQuery,
-        mockRepository as Repository<any>,
+        mockRepository as Repository<MockEntity>,
       );
 
       expect(result.meta.totalPages).toBe(3);
