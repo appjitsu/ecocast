@@ -4,25 +4,24 @@ import {
   CAST_CATEGORIES,
   CAST_STATUSES,
   CAST_VOICES,
-  CastCategory,
-  CastStatus,
   CreateCastForm,
 } from '@repo/types';
-import { useToast } from '@repo/ui';
+import { Button } from '@repo/ui';
+import { capitalize, slugify } from '@repo/utils';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
-import { fetchWithAuth } from '../../../lib/auth/fetchWithAuth';
+import { apiPost } from '../../../lib/api/fetch-helpers';
 
 export default function CreateCastPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const [form, setForm] = useState<CreateCastForm>({
     title: '',
-    castCategory: CastCategory.NEWS,
+    castCategory: CAST_CATEGORIES[0],
     slug: '',
-    status: CastStatus.DRAFT,
+    status: CAST_STATUSES[0],
   });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -30,39 +29,17 @@ export default function CreateCastPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetchWithAuth(
+      const { error } = await apiPost(
         `${process.env.NEXT_PUBLIC_API_URL}/casts`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(form),
-        },
+        form,
       );
 
-      if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Cast created successfully',
-        });
-        router.push('/dashboard');
+      if (error) {
+        toast.error(error);
       } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to create cast',
-        });
+        toast.success('Cast created successfully');
+        router.push('/dashboard');
       }
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred',
-      });
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +51,7 @@ export default function CreateCastPage() {
     >,
   ) => {
     const { name, value } = e.target;
-    setForm((prev: CreateCastForm) => ({
+    setForm((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -83,10 +60,7 @@ export default function CreateCastPage() {
   // Auto-generate slug from title
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const title = e.target.value;
-    const slug = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    const slug = slugify(title);
 
     setForm((prev: CreateCastForm) => ({
       ...prev,
@@ -97,15 +71,16 @@ export default function CreateCastPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background p-8">
-        <div className="max-w-3xl mx-auto space-y-8">
+      <div className="min-h-screen bg-white dark:bg-gray-900 p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
           <div className="flex items-center space-x-4">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => router.back()}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               ← Back
-            </button>
+            </Button>
             <h1 className="text-2xl font-bold text-foreground">
               Create New Cast
             </h1>
@@ -127,7 +102,7 @@ export default function CreateCastPage() {
                   required
                   value={form.title}
                   onChange={handleTitleChange}
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700"
                   placeholder="Enter cast title"
                 />
               </div>
@@ -146,7 +121,7 @@ export default function CreateCastPage() {
                   required
                   value={form.slug}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700"
                   placeholder="enter-slug"
                 />
               </div>
@@ -164,12 +139,11 @@ export default function CreateCastPage() {
                   required
                   value={form.castCategory}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700"
                 >
                   {CAST_CATEGORIES.map((category) => (
                     <option key={category} value={category}>
-                      {category.charAt(0).toUpperCase() +
-                        category.slice(1).replace(/-/g, ' ')}
+                      {capitalize(category.replace(/-/g, ' '))}
                     </option>
                   ))}
                 </select>
@@ -188,11 +162,11 @@ export default function CreateCastPage() {
                   required
                   value={form.status}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700"
                 >
                   {CAST_STATUSES.map((status) => (
                     <option key={status} value={status}>
-                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                      {capitalize(status)}
                     </option>
                   ))}
                 </select>
@@ -211,7 +185,7 @@ export default function CreateCastPage() {
                   value={form.content}
                   onChange={handleChange}
                   rows={5}
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700"
                   placeholder="Enter cast content"
                 />
               </div>
@@ -228,12 +202,12 @@ export default function CreateCastPage() {
                   name="voice"
                   value={form.voice || ''}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700"
                 >
                   <option value="">Select a voice</option>
                   {CAST_VOICES.map((voice) => (
                     <option key={voice} value={voice}>
-                      {voice.charAt(0).toUpperCase() + voice.slice(1)}
+                      {capitalize(voice)}
                     </option>
                   ))}
                 </select>
@@ -252,7 +226,7 @@ export default function CreateCastPage() {
                   type="url"
                   value={form.voiceOverUrl}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700"
                   placeholder="https://example.com/voice.mp3"
                 />
               </div>
@@ -270,7 +244,7 @@ export default function CreateCastPage() {
                   type="url"
                   value={form.featuredImageUrl}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700"
                   placeholder="https://example.com/image.jpg"
                 />
               </div>
@@ -288,26 +262,27 @@ export default function CreateCastPage() {
                   type="datetime-local"
                   value={form.scheduledFor}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700"
                 />
               </div>
             </div>
 
             <div className="flex justify-end space-x-4">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => router.back()}
-                className="px-4 py-2 rounded-md border hover:bg-secondary"
+                className="text-muted-foreground hover:text-foreground"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
                 disabled={isLoading}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md disabled:opacity-50"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 {isLoading ? 'Creating...' : 'Create Cast'}
-              </button>
+              </Button>
             </div>
           </form>
         </div>

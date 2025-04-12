@@ -5,7 +5,7 @@ import { Button } from '@repo/ui';
 import { jwtDecode } from 'jwt-decode';
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../../lib/auth/AuthContext';
 import { CreateCastModal } from './components/CreateCastModal';
 
@@ -22,7 +22,7 @@ export default function MyCastsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  const fetchCasts = async () => {
+  const fetchCasts = useCallback(async () => {
     if (!accessToken) {
       console.log('No access token available');
       return;
@@ -43,7 +43,7 @@ export default function MyCastsPage() {
       );
 
       console.log('API Response status:', response.status);
-      const data = await response.json();
+      const data = (await response.json()) as Cast[] | { data: Cast[] };
       console.log('API Response data:', data);
 
       if (!response.ok) {
@@ -60,7 +60,7 @@ export default function MyCastsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [accessToken]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -69,7 +69,7 @@ export default function MyCastsPage() {
     } else {
       console.log('User is not authenticated');
     }
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated, accessToken, fetchCasts]);
 
   if (!isAuthenticated) {
     return null;

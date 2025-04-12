@@ -147,7 +147,7 @@ export default function PreviewPage() {
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Welcome to your daily news roundup. Today's top stories
+                  Welcome to your daily news roundup. Today&apos;s top stories
                   include...
                 </p>
               </div>

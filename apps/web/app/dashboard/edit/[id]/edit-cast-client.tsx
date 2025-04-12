@@ -1,17 +1,16 @@
 'use client';
 
 import {
-  CAST_CATEGORIES,
-  CAST_STATUSES,
-  CAST_VOICES,
   Cast,
   CastCategory,
   CastStatus,
+  CastVoice,
   CreateCastForm,
 } from '@repo/types';
-import { useToast } from '@repo/ui';
+import { Button } from '@repo/ui';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { ProtectedRoute } from '../../../../components/ProtectedRoute';
 import { fetchWithAuth } from '../../../../lib/auth/fetchWithAuth';
 
@@ -19,7 +18,6 @@ export default function EditCastClient({ id }: { id: string }) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const { toast } = useToast();
   const [form, setForm] = useState<CreateCastForm>({
     title: '',
     castCategory: CastCategory.NEWS,
@@ -35,14 +33,14 @@ export default function EditCastClient({ id }: { id: string }) {
         );
 
         if (response.ok) {
-          const data: Cast = await response.json();
+          const data = (await response.json()) as Cast;
           setForm({
             title: data.title,
             castCategory: data.castCategory,
             slug: data.slug,
             status: data.status,
             content: data.content,
-            voice: data.voice,
+            voice: data.voice as CastVoice,
             voiceOverUrl: data.voiceOverUrl,
             featuredImageUrl: data.featuredImageUrl,
             scheduledFor: data.scheduledFor,
@@ -51,14 +49,11 @@ export default function EditCastClient({ id }: { id: string }) {
           throw new Error('Failed to fetch cast');
         }
       } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description:
-            error instanceof Error
-              ? error.message
-              : 'An unexpected error occurred',
-        });
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred',
+        );
         router.push('/dashboard');
       } finally {
         setIsLoading(false);
@@ -66,7 +61,7 @@ export default function EditCastClient({ id }: { id: string }) {
     };
 
     fetchCast();
-  }, [id, router, toast]);
+  }, [id, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -85,27 +80,15 @@ export default function EditCastClient({ id }: { id: string }) {
       );
 
       if (response.ok) {
-        toast({
-          title: 'Success',
-          description: 'Cast updated successfully',
-        });
+        toast.success('Cast updated successfully');
         router.push('/dashboard');
       } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to update cast',
-        });
+        throw new Error('Failed to update cast');
       }
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'An unexpected error occurred',
-      });
+      toast.error(
+        error instanceof Error ? error.message : 'An unexpected error occurred',
+      );
     } finally {
       setIsSaving(false);
     }
@@ -117,7 +100,7 @@ export default function EditCastClient({ id }: { id: string }) {
     >,
   ) => {
     const { name, value } = e.target;
-    setForm((prev: CreateCastForm) => ({
+    setForm((prev) => ({
       ...prev,
       [name]: value,
     }));
@@ -138,223 +121,147 @@ export default function EditCastClient({ id }: { id: string }) {
     }));
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-gray-900 p-8">
+        <div className="max-w-4xl mx-auto">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-background p-8">
-        <div className="max-w-3xl mx-auto space-y-8">
+      <div className="min-h-screen bg-white dark:bg-gray-900 p-8">
+        <div className="max-w-4xl mx-auto space-y-8">
           <div className="flex items-center space-x-4">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => router.back()}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               ← Back
-            </button>
+            </Button>
             <h1 className="text-2xl font-bold text-foreground">Edit Cast</h1>
           </div>
-
-          {isLoading ? (
-            <div className="text-center py-8">Loading...</div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label
-                    htmlFor="title"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Title
-                  </label>
-                  <input
-                    id="title"
-                    name="title"
-                    type="text"
-                    required
-                    value={form.title}
-                    onChange={handleTitleChange}
-                    className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="Enter cast title"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="slug"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Slug
-                  </label>
-                  <input
-                    id="slug"
-                    name="slug"
-                    type="text"
-                    required
-                    value={form.slug}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="enter-slug"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="castCategory"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Category
-                  </label>
-                  <select
-                    id="castCategory"
-                    name="castCategory"
-                    required
-                    value={form.castCategory}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded-md border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    {CAST_CATEGORIES.map((category) => (
-                      <option key={category} value={category}>
-                        {category.charAt(0).toUpperCase() +
-                          category.slice(1).replace(/-/g, ' ')}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="status"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Status
-                  </label>
-                  <select
-                    id="status"
-                    name="status"
-                    required
-                    value={form.status}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded-md border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    {CAST_STATUSES.map((status) => (
-                      <option key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="content"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Content
-                  </label>
-                  <textarea
-                    id="content"
-                    name="content"
-                    value={form.content}
-                    onChange={handleChange}
-                    rows={5}
-                    className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="Enter cast content"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="voice"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Voice
-                  </label>
-                  <select
-                    id="voice"
-                    name="voice"
-                    value={form.voice || ''}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded-md border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="">Select a voice</option>
-                    {CAST_VOICES.map((voice) => (
-                      <option key={voice} value={voice}>
-                        {voice.charAt(0).toUpperCase() + voice.slice(1)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="voiceOverUrl"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Voice Over URL
-                  </label>
-                  <input
-                    id="voiceOverUrl"
-                    name="voiceOverUrl"
-                    type="url"
-                    value={form.voiceOverUrl}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="https://example.com/voice.mp3"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="featuredImageUrl"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Featured Image URL
-                  </label>
-                  <input
-                    id="featuredImageUrl"
-                    name="featuredImageUrl"
-                    type="url"
-                    value={form.featuredImageUrl}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="https://example.com/image.jpg"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor="scheduledFor"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Schedule For
-                  </label>
-                  <input
-                    id="scheduledFor"
-                    name="scheduledFor"
-                    type="datetime-local"
-                    value={form.scheduledFor}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 rounded-md border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                <button
-                  type="button"
-                  onClick={() => router.back()}
-                  className="px-4 py-2 rounded-md border hover:bg-secondary"
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="title"
+                  className="block text-sm font-medium text-foreground"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md disabled:opacity-50"
-                >
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </button>
+                  Title
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  value={form.title}
+                  onChange={handleTitleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                />
               </div>
-            </form>
-          )}
+              <div>
+                <label
+                  htmlFor="castCategory"
+                  className="block text-sm font-medium text-foreground"
+                >
+                  Category
+                </label>
+                <select
+                  id="castCategory"
+                  name="castCategory"
+                  value={form.castCategory}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  {Object.values(CastCategory).map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="status"
+                  className="block text-sm font-medium text-foreground"
+                >
+                  Status
+                </label>
+                <select
+                  id="status"
+                  name="status"
+                  value={form.status}
+                  onChange={handleChange}
+                  required
+                  className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  {Object.values(CastStatus).map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="voice"
+                  className="block text-sm font-medium text-foreground"
+                >
+                  Voice
+                </label>
+                <select
+                  id="voice"
+                  name="voice"
+                  value={form.voice}
+                  onChange={handleChange}
+                  className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  {Object.values(CastVoice).map((voice) => (
+                    <option key={voice} value={voice}>
+                      {voice}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="content"
+                  className="block text-sm font-medium text-foreground"
+                >
+                  Content
+                </label>
+                <textarea
+                  id="content"
+                  name="content"
+                  value={form.content}
+                  onChange={handleChange}
+                  rows={5}
+                  className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-4">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => router.back()}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSaving}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
         </div>
       </div>
     </ProtectedRoute>

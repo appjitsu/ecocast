@@ -1,5 +1,6 @@
 import { CastCategory, CastStatus, CastVoice } from '@repo/types';
 import { Button } from '@repo/ui';
+import { capitalize } from '@repo/utils';
 import { useState } from 'react';
 
 interface CreateCastFormProps {
@@ -82,7 +83,7 @@ export function CreateCastForm({ onSubmit, onCancel }: CreateCastFormProps) {
         >
           {Object.values(CastCategory).map((category) => (
             <option key={category} value={category}>
-              {category.charAt(0).toUpperCase() + category.slice(1)}
+              {capitalize(category)}
             </option>
           ))}
         </select>
@@ -102,7 +103,7 @@ export function CreateCastForm({ onSubmit, onCancel }: CreateCastFormProps) {
         >
           {Object.values(CastVoice).map((voice) => (
             <option key={voice} value={voice}>
-              {voice.charAt(0).toUpperCase() + voice.slice(1)}
+              {capitalize(voice)}
             </option>
           ))}
         </select>

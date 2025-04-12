@@ -1,3 +1,4 @@
+import { CastCategory, CastStatus, CastVoice } from '@repo/types';
 import { Button } from '@repo/ui';
 import { X } from 'lucide-react';
 import { useAuth } from '../../../../lib/auth/AuthContext';
@@ -9,6 +10,14 @@ interface CreateCastModalProps {
   onSuccess?: () => void;
 }
 
+interface CastFormData {
+  title: string;
+  castCategory: CastCategory;
+  status: CastStatus;
+  content: string;
+  voice: CastVoice;
+}
+
 export function CreateCastModal({
   isOpen,
   onClose,
@@ -18,7 +27,7 @@ export function CreateCastModal({
 
   if (!isOpen) return null;
 
-  const handleSubmit = async (formData: any) => {
+  const handleSubmit = async (formData: CastFormData) => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/casts`, {
       method: 'POST',
       headers: {
