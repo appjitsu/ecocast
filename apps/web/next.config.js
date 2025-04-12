@@ -14,6 +14,9 @@ const nextConfig = {
   eslint: {
     dirs: ['src', 'app', 'components', 'lib', 'utils'],
   },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
   images: {
     remotePatterns: [
       {
@@ -23,6 +26,7 @@ const nextConfig = {
         pathname: '/**',
       },
     ],
+    unoptimized: true,
   },
 };
 

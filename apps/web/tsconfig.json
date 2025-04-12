@@ -12,7 +12,10 @@
       "@/styles/*": ["./styles/*"],
       "@/types/*": ["./types/*"],
       "@/components/*": ["./components/*"],
-      "@/lib/*": ["./lib/*"]
+      "@/lib/*": ["./lib/*"],
+      "@repo/utils": ["../../packages/utils/src"],
+      "@repo/types": ["../../packages/types/src"],
+      "@repo/ui": ["../../packages/ui/src"]
     },
     "incremental": true
   },
