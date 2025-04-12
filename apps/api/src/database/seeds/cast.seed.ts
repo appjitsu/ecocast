@@ -1,4 +1,5 @@
 import { CastCategory, CastStatus, CastVoice } from '@repo/types';
+import { slugify } from '@repo/utils';
 import { DataSource } from 'typeorm';
 import { Cast } from '../../casts/cast.entity';
 import { User } from '../../users/user.entity';
@@ -11,13 +12,6 @@ function generateRandomDate(start: Date, end: Date) {
 
 function getRandomElement<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
-}
-
-function generateRandomSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
 }
 
 function generateRandomCast(user: User) {
@@ -38,12 +32,12 @@ function generateRandomCast(user: User) {
   return {
     title,
     castCategory: category,
-    slug: generateRandomSlug(title),
+    slug: slugify(title),
     status,
     content: `Sample content for ${category.toLowerCase()} update...`,
     voice,
-    voiceOverUrl: `https://example.com/audio/${generateRandomSlug(title)}.mp3`,
-    featuredImageUrl: `https://example.com/images/${generateRandomSlug(title)}.jpg`,
+    voiceOverUrl: `https://example.com/audio/${slugify(title)}.mp3`,
+    featuredImageUrl: `https://example.com/images/${slugify(title)}.jpg`,
     publishedOn: date,
     owner: user,
   };

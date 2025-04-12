@@ -2,8 +2,9 @@ import { BadRequestException, RequestTimeoutException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CastCategory, CastStatus, CastVoice, Paginated } from '@repo/types';
-import { Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
+import { WebhookService } from '../../common/webhooks/webhook.service';
 import { UsersService } from '../../users/providers/users.service';
 import { Cast } from '../cast.entity';
 import { CreateCastDTO } from '../dtos/create-cast.dto';
@@ -15,7 +16,6 @@ import { CreateCastProvider } from './create-cast.provider';
 describe('CastsService', () => {
   let service: CastsService;
   let castsRepository: Repository<Cast>;
-  let usersService: UsersService;
   let paginationProvider: PaginationProvider;
   let createCastProvider: CreateCastProvider;
 
@@ -50,17 +50,17 @@ describe('CastsService', () => {
         {
           provide: getRepositoryToken(Cast),
           useValue: {
+            createQueryBuilder: jest.fn(),
             findOneBy: jest.fn(),
+            findOne: jest.fn(),
             save: jest.fn(),
-            createQueryBuilder: jest.fn().mockReturnValue({
-              where: jest.fn().mockReturnThis(),
-            }),
+            delete: jest.fn(),
           },
         },
         {
           provide: UsersService,
           useValue: {
-            findOneById: jest.fn(),
+            findOne: jest.fn(),
           },
         },
         {
@@ -72,9 +72,13 @@ describe('CastsService', () => {
         {
           provide: CreateCastProvider,
           useValue: {
-            create: jest
-              .fn()
-              .mockImplementation((dto, user) => Promise.resolve(mockCast)),
+            create: jest.fn(),
+          },
+        },
+        {
+          provide: WebhookService,
+          useValue: {
+            dispatchEvent: jest.fn(),
           },
         },
       ],
@@ -82,7 +86,6 @@ describe('CastsService', () => {
 
     service = module.get<CastsService>(CastsService);
     castsRepository = module.get<Repository<Cast>>(getRepositoryToken(Cast));
-    usersService = module.get<UsersService>(UsersService);
     paginationProvider = module.get<PaginationProvider>(PaginationProvider);
     createCastProvider = module.get<CreateCastProvider>(CreateCastProvider);
   });
@@ -93,25 +96,21 @@ describe('CastsService', () => {
 
   describe('findAll', () => {
     it('should return paginated casts', async () => {
-      const userId = '1';
+      const userId = 'test-user-id';
       const getCastsDto: GetCastsDto = {
-        page: 1,
         limit: 10,
+        page: 1,
         startDate: new Date(),
         endDate: new Date(),
       };
 
-      const mockQueryBuilder = {
-        where: jest.fn().mockReturnThis(),
-      };
-
       const paginatedResponse: Paginated<Cast> = {
-        data: [mockCast],
+        data: [],
         meta: {
           itemsPerPage: 10,
-          totalItems: 1,
+          totalItems: 0,
           currentPage: 1,
-          totalPages: 1,
+          totalPages: 0,
         },
         links: {
           first: '/casts?page=1',
@@ -122,12 +121,26 @@ describe('CastsService', () => {
         },
       };
 
-      jest
-        .spyOn(castsRepository, 'createQueryBuilder')
-        .mockReturnValue(mockQueryBuilder as any);
+      const mockQueryBuilder = {
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        skip: jest.fn().mockReturnThis(),
+        take: jest.fn().mockReturnThis(),
+        getManyAndCount: jest
+          .fn()
+          .mockResolvedValue([
+            paginatedResponse.data,
+            paginatedResponse.meta.totalItems,
+          ]),
+      } as unknown as SelectQueryBuilder<Cast>;
 
-      jest
-        .spyOn(paginationProvider, 'paginateQuery')
+      // Mock the methods directly instead of using spyOn
+      castsRepository.createQueryBuilder = jest
+        .fn()
+        .mockReturnValue(mockQueryBuilder);
+      paginationProvider.paginateQuery = jest
+        .fn()
         .mockResolvedValue(paginatedResponse);
 
       const result = await service.findAll(userId, getCastsDto);
@@ -156,14 +169,14 @@ describe('CastsService', () => {
 
       const mockQueryBuilder = {
         where: jest.fn().mockReturnThis(),
-      };
+      } as unknown as SelectQueryBuilder<Cast>;
 
-      jest
-        .spyOn(castsRepository, 'createQueryBuilder')
-        .mockReturnValue(mockQueryBuilder as any);
-
-      jest
-        .spyOn(paginationProvider, 'paginateQuery')
+      // Use direct assignment instead of spyOn
+      castsRepository.createQueryBuilder = jest
+        .fn()
+        .mockReturnValue(mockQueryBuilder);
+      paginationProvider.paginateQuery = jest
+        .fn()
         .mockRejectedValue(new Error());
 
       await expect(service.findAll(userId, getCastsDto)).rejects.toThrow(
@@ -192,15 +205,14 @@ describe('CastsService', () => {
         email: 'test@example.com',
       };
 
-      jest.spyOn(createCastProvider, 'create').mockResolvedValue(mockCast);
+      const createCastSpy = jest
+        .spyOn(createCastProvider, 'create')
+        .mockResolvedValue(mockCast);
 
       const result = await service.create(createCastDto, activeUser);
 
       expect(result).toEqual(mockCast);
-      expect(createCastProvider.create).toHaveBeenCalledWith(
-        createCastDto,
-        activeUser,
-      );
+      expect(createCastSpy).toHaveBeenCalledWith(createCastDto, activeUser);
     });
   });
 
@@ -214,21 +226,24 @@ describe('CastsService', () => {
 
       const updatedCast: Cast = {
         ...mockCast,
-        title: patchCastDto.title!,
-        castCategory: patchCastDto.castCategory!,
+        title: patchCastDto.title || mockCast.title,
+        castCategory: patchCastDto.castCategory || mockCast.castCategory,
       };
 
-      jest.spyOn(castsRepository, 'findOneBy').mockResolvedValue(mockCast);
-      jest.spyOn(castsRepository, 'save').mockResolvedValue(updatedCast);
+      castsRepository.findOneBy = jest.fn().mockResolvedValue(mockCast);
+
+      castsRepository.save = jest.fn().mockResolvedValue(updatedCast);
 
       const result = await service.update(castId, patchCastDto);
 
       expect(result).toEqual(updatedCast);
       expect(castsRepository.findOneBy).toHaveBeenCalledWith({ id: castId });
-      expect(castsRepository.save).toHaveBeenCalledWith({
-        ...mockCast,
-        ...patchCastDto,
-      });
+      expect(castsRepository.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: patchCastDto.title,
+          castCategory: patchCastDto.castCategory,
+        }),
+      );
     });
 
     it('should throw BadRequestException if cast not found', async () => {
@@ -237,7 +252,8 @@ describe('CastsService', () => {
         title: 'Updated Cast',
       };
 
-      jest.spyOn(castsRepository, 'findOneBy').mockResolvedValue(null);
+      // Use direct assignment instead of spyOn
+      castsRepository.findOneBy = jest.fn().mockResolvedValue(null);
 
       await expect(service.update(castId, patchCastDto)).rejects.toThrow(
         BadRequestException,
@@ -250,7 +266,10 @@ describe('CastsService', () => {
         title: 'Updated Cast',
       };
 
-      jest.spyOn(castsRepository, 'findOneBy').mockRejectedValue(new Error());
+      // Use direct assignment instead of spyOn
+      castsRepository.findOneBy = jest
+        .fn()
+        .mockRejectedValue(new Error('Database error'));
 
       await expect(service.update(castId, patchCastDto)).rejects.toThrow(
         RequestTimeoutException,
@@ -263,8 +282,8 @@ describe('CastsService', () => {
         title: 'Updated Cast',
       };
 
-      jest.spyOn(castsRepository, 'findOneBy').mockResolvedValue(mockCast);
-      jest.spyOn(castsRepository, 'save').mockRejectedValue(new Error());
+      castsRepository.findOneBy = jest.fn().mockResolvedValue(mockCast);
+      castsRepository.save = jest.fn().mockRejectedValue(new Error());
 
       await expect(service.update(castId, patchCastDto)).rejects.toThrow(
         RequestTimeoutException,

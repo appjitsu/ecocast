@@ -17,7 +17,7 @@ export interface ICreateCastDTO extends Omit<ICastForm, 'scheduledFor'> {
   publishedOn?: Date;
 }
 
-export interface IPatchCastDTO extends Partial<ICreateCastDTO> {}
+export type IPatchCastDTO = Partial<ICreateCastDTO>;
 
 export interface IGetCastsBaseDto {
   startDate?: Date;

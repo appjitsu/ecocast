@@ -46,7 +46,7 @@ describe('CastsController', () => {
             findAll: jest.fn(),
             create: jest
               .fn()
-              .mockImplementation((dto, user) => Promise.resolve(mockCast)),
+              .mockImplementation(() => Promise.resolve(mockCast)),
             update: jest.fn(),
           },
         },
@@ -88,12 +88,14 @@ describe('CastsController', () => {
         },
       };
 
-      jest.spyOn(castsService, 'findAll').mockResolvedValue(paginatedResponse);
+      const findAllSpy = jest
+        .spyOn(castsService, 'findAll')
+        .mockImplementation(() => Promise.resolve(paginatedResponse));
 
       const result = await controller.getCasts(userId, getCastsDto);
 
       expect(result).toEqual(paginatedResponse);
-      expect(castsService.findAll).toHaveBeenCalledWith(userId, getCastsDto);
+      expect(findAllSpy).toHaveBeenCalledWith(userId, getCastsDto);
     });
   });
 
@@ -117,15 +119,14 @@ describe('CastsController', () => {
         email: 'test@example.com',
       };
 
-      jest.spyOn(castsService, 'create').mockResolvedValue(mockCast);
+      const createSpy = jest
+        .spyOn(castsService, 'create')
+        .mockImplementation(() => Promise.resolve(mockCast));
 
       const result = await controller.createCast(createCastDto, activeUser);
 
       expect(result).toEqual(mockCast);
-      expect(castsService.create).toHaveBeenCalledWith(
-        createCastDto,
-        activeUser,
-      );
+      expect(createSpy).toHaveBeenCalledWith(createCastDto, activeUser);
     });
   });
 
@@ -143,12 +144,14 @@ describe('CastsController', () => {
         castCategory: patchCastDto.castCategory!,
       };
 
-      jest.spyOn(castsService, 'update').mockResolvedValue(updatedCast);
+      const updateSpy = jest
+        .spyOn(castsService, 'update')
+        .mockImplementation(() => Promise.resolve(updatedCast));
 
       const result = await controller.updateCast(castId, patchCastDto);
 
       expect(result).toEqual(updatedCast);
-      expect(castsService.update).toHaveBeenCalledWith(castId, patchCastDto);
+      expect(updateSpy).toHaveBeenCalledWith(castId, patchCastDto);
     });
   });
 });

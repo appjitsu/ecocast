@@ -87,44 +87,72 @@ describe('CreateCastProvider', () => {
     };
 
     it('should create a new cast successfully', async () => {
-      jest.spyOn(usersService, 'findOneById').mockResolvedValue(mockUser);
-      jest.spyOn(castsRepository, 'create').mockReturnValue(mockCast);
-      jest.spyOn(castsRepository, 'save').mockResolvedValue(mockCast);
+      const findOneByIdSpy = jest
+        .spyOn(usersService, 'findOneById')
+        .mockImplementation(function (this: void) {
+          return Promise.resolve(mockUser);
+        });
+      const createSpy = jest
+        .spyOn(castsRepository, 'create')
+        .mockImplementation(function (this: void) {
+          return mockCast;
+        });
+      const saveSpy = jest
+        .spyOn(castsRepository, 'save')
+        .mockImplementation(function (this: void) {
+          return Promise.resolve(mockCast);
+        });
 
       const result = await provider.create(createCastDto, activeUser);
 
       expect(result).toEqual(mockCast);
-      expect(usersService.findOneById).toHaveBeenCalledWith(activeUser.sub);
-      expect(castsRepository.create).toHaveBeenCalledWith({
+      expect(findOneByIdSpy).toHaveBeenCalledWith(activeUser.sub);
+      expect(createSpy).toHaveBeenCalledWith({
         ...createCastDto,
         owner: mockUser,
       });
-      expect(castsRepository.save).toHaveBeenCalledWith(mockCast);
+      expect(saveSpy).toHaveBeenCalledWith(mockCast);
     });
 
     it('should throw ConflictException if user is not found', async () => {
-      jest.spyOn(usersService, 'findOneById').mockRejectedValue(new Error());
+      const findOneByIdSpy = jest
+        .spyOn(usersService, 'findOneById')
+        .mockImplementation(function (this: void) {
+          return Promise.reject(new Error());
+        });
 
       await expect(provider.create(createCastDto, activeUser)).rejects.toThrow(
         ConflictException,
       );
-      expect(usersService.findOneById).toHaveBeenCalledWith(activeUser.sub);
+      expect(findOneByIdSpy).toHaveBeenCalledWith(activeUser.sub);
     });
 
     it('should throw ConflictException on database error during save', async () => {
-      jest.spyOn(usersService, 'findOneById').mockResolvedValue(mockUser);
-      jest.spyOn(castsRepository, 'create').mockReturnValue(mockCast);
-      jest.spyOn(castsRepository, 'save').mockRejectedValue(new Error());
+      const findOneByIdSpy = jest
+        .spyOn(usersService, 'findOneById')
+        .mockImplementation(function (this: void) {
+          return Promise.resolve(mockUser);
+        });
+      const createSpy = jest
+        .spyOn(castsRepository, 'create')
+        .mockImplementation(function (this: void) {
+          return mockCast;
+        });
+      const saveSpy = jest
+        .spyOn(castsRepository, 'save')
+        .mockImplementation(function (this: void) {
+          return Promise.reject(new Error());
+        });
 
       await expect(provider.create(createCastDto, activeUser)).rejects.toThrow(
         ConflictException,
       );
-      expect(usersService.findOneById).toHaveBeenCalledWith(activeUser.sub);
-      expect(castsRepository.create).toHaveBeenCalledWith({
+      expect(findOneByIdSpy).toHaveBeenCalledWith(activeUser.sub);
+      expect(createSpy).toHaveBeenCalledWith({
         ...createCastDto,
         owner: mockUser,
       });
-      expect(castsRepository.save).toHaveBeenCalledWith(mockCast);
+      expect(saveSpy).toHaveBeenCalledWith(mockCast);
     });
   });
 });

@@ -5,17 +5,17 @@ import {
   CastVoice,
   ICreateCastDTO,
 } from '@repo/types';
+import { slugSchema, urlSchema } from '@repo/utils';
 import {
   IsDate,
   IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsUrl,
-  Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { ZodValidation } from '../../common/validation/zod-validator';
 
 export class CreateCastDTO implements ICreateCastDTO {
   @ApiProperty({
@@ -44,7 +44,7 @@ export class CreateCastDTO implements ICreateCastDTO {
   @IsNotEmpty()
   @MaxLength(256)
   @MinLength(4)
-  @Matches(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+  @ZodValidation(slugSchema, {
     message:
       'A slug should be all small letters and uses only "-" and without spaces. For example "my-url"',
   })
@@ -81,7 +81,7 @@ export class CreateCastDTO implements ICreateCastDTO {
   @IsOptional()
   @MinLength(4)
   @MaxLength(1024)
-  @IsUrl()
+  @ZodValidation(urlSchema)
   voiceOverUrl?: string;
 
   @ApiPropertyOptional({
@@ -91,7 +91,7 @@ export class CreateCastDTO implements ICreateCastDTO {
   @IsOptional()
   @MinLength(4)
   @MaxLength(1024)
-  @IsUrl()
+  @ZodValidation(urlSchema)
   featuredImageUrl?: string;
 
   @ApiPropertyOptional({

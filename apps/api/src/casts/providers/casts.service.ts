@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ActiveUser, Paginated } from '@repo/types';
 import { Repository } from 'typeorm';
 import { PaginationProvider } from '../../common/pagination/providers/pagination.provider';
+import { WebhookService } from '../../common/webhooks/webhook.service';
 import { UsersService } from '../../users/providers/users.service';
 import { Cast } from '../cast.entity';
 import { CreateCastDTO } from '../dtos/create-cast.dto';
@@ -34,6 +35,7 @@ export class CastsService {
      * Injecting Create Cast Provider
      */
     private readonly createCastProvider: CreateCastProvider,
+    private readonly webhookService: WebhookService,
   ) {}
 
   public async findAll(
@@ -71,7 +73,12 @@ export class CastsService {
     createCastDto: CreateCastDTO,
     user: ActiveUser,
   ): Promise<Cast> {
-    return await this.createCastProvider.create(createCastDto, user);
+    const cast = await this.createCastProvider.create(createCastDto, user);
+
+    // Dispatch webhook event for the created cast
+    await this.webhookService.dispatchEvent('cast.created', cast);
+
+    return cast;
   }
 
   public async update(castId: number, patchCastDto: PatchCastDTO) {
@@ -102,6 +109,9 @@ export class CastsService {
         ...patchCastDto,
       });
 
+      // Dispatch webhook event for the updated cast
+      await this.webhookService.dispatchEvent('cast.updated', cast);
+
       return cast;
     } catch {
       throw new RequestTimeoutException(
@@ -113,10 +123,18 @@ export class CastsService {
     }
   }
 
-  public async delete(id: number) {
-    // Deleting the cast
-    await this.castsRepository.delete(id);
-    // confirmation
-    return { deleted: true, id };
+  public async delete(id: number): Promise<boolean> {
+    // Dispatch webhook event before actually deleting
+    const cast = await this.castsRepository.findOne({ where: { id } });
+    if (cast) {
+      await this.webhookService.dispatchEvent('cast.deleted', {
+        id,
+        deletedAt: new Date(),
+      });
+    }
+
+    // Delete the cast
+    const result = await this.castsRepository.delete(id);
+    return result.affected ? result.affected > 0 : false;
   }
 }
