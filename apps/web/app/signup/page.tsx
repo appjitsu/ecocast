@@ -1,5 +1,6 @@
 'use client';
 
+import { AuthTokens } from '@repo/types';
 import { useToast } from '@repo/ui';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -50,30 +51,35 @@ export default function SignupPage() {
         );
 
         if (signInResponse.ok) {
-          const data = await signInResponse.json();
-          login(data);
-          toast({
-            title: 'Success',
-            description: 'Account created and signed in successfully',
-          });
-          router.push('/dashboard');
+          try {
+            const data = (await signInResponse.json()) as AuthTokens;
+            login(data);
+            toast({
+              title: 'Success',
+              description: 'Account created and signed in successfully',
+            });
+            router.push('/dashboard');
+          } catch (parseError) {
+            console.error('Failed to parse response:', parseError);
+            toast({
+              title: 'Error',
+              description: 'Unexpected server response format',
+            });
+          }
         } else {
           toast({
-            variant: 'destructive',
             title: 'Error',
             description: 'Failed to sign in after registration',
           });
         }
       } else {
         toast({
-          variant: 'destructive',
           title: 'Error',
           description: 'Failed to create account',
         });
       }
     } catch {
       toast({
-        variant: 'destructive',
         title: 'Error',
         description: 'An unexpected error occurred',
       });
@@ -109,7 +115,7 @@ export default function SignupPage() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="w-full flex items-center justify-center gap-2 rounded-md border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="w-full flex items-center justify-center gap-2 rounded-md border bg-white dark:bg-gray-900 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:ring-offset-2"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5">
                   <path
@@ -151,7 +157,7 @@ export default function SignupPage() {
                     required
                     minLength={3}
                     maxLength={96}
-                    className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
+                    className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600"
                   />
                 </div>
 
@@ -168,7 +174,7 @@ export default function SignupPage() {
                     type="text"
                     minLength={3}
                     maxLength={96}
-                    className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
+                    className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600"
                   />
                 </div>
               </div>
@@ -185,9 +191,9 @@ export default function SignupPage() {
                   name="email"
                   type="email"
                   maxLength={96}
-                  placeholder="m@example.com"
+                  placeholder="you@example.com"
                   required
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600"
                 />
               </div>
 
@@ -202,9 +208,10 @@ export default function SignupPage() {
                   id="password"
                   name="password"
                   type="password"
+                  placeholder="********"
                   required
                   pattern="^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*#?&])[A-Za-z\d@$!%*#?&]{8,}$"
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600"
                 />
                 <p className="text-xs text-muted-foreground">
                   Password must be at least 8 characters long and contain at
@@ -242,14 +249,21 @@ export default function SignupPage() {
       </div>
 
       {/* Right side - Mountain Background */}
-      <div className="relative hidden md:block">
+      <div className="relative hidden md:block h-full bg-gray-100">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-transparent to-transparent z-10" />
         <Image
-          src="/sunrise-mountains.jpg"
+          src="https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80&w=2070"
           alt="Sunrise over mountain peaks"
           fill
           className="object-cover"
           priority
+          sizes="(max-width: 768px) 100vw, 50vw"
+          quality={100}
+          onError={(e) => {
+            console.error('Image failed to load:', e);
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+          }}
         />
       </div>
     </div>

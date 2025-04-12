@@ -85,7 +85,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
 
       if (response.ok) {
-        const tokens: AuthTokens = await response.json();
+        const tokens = (await response.json()) as AuthTokens;
         console.log('Received new tokens:', {
           accessTokenLength: tokens.access_token.length,
           refreshTokenLength: tokens.refresh_token.length,

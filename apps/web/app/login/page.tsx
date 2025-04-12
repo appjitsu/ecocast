@@ -1,5 +1,6 @@
 'use client';
 
+import { AuthTokens } from '@repo/types';
 import { useToast } from '@repo/ui';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -47,18 +48,25 @@ export default function LoginPage() {
       console.log('Sign-in response status:', response.status);
 
       if (response.ok) {
-        const data = await response.json();
-        login(data);
-        toast({
-          title: 'Success',
-          description: 'Logged in successfully',
-        });
-        router.push('/dashboard');
+        try {
+          const data = (await response.json()) as AuthTokens;
+          login(data);
+          toast({
+            title: 'Success',
+            description: 'Logged in successfully',
+          });
+          router.push('/dashboard');
+        } catch (parseError) {
+          console.error('Failed to parse response:', parseError);
+          toast({
+            title: 'Error',
+            description: 'Unexpected server response format',
+          });
+        }
       } else {
         const errorData = await response.text();
         console.log('Sign-in error:', response.status, errorData);
         toast({
-          variant: 'destructive',
           title: 'Error',
           description: 'Invalid email or password',
         });
@@ -66,7 +74,6 @@ export default function LoginPage() {
     } catch (error) {
       console.log('Sign-in error:', error);
       toast({
-        variant: 'destructive',
         title: 'Error',
         description:
           error instanceof Error
@@ -103,7 +110,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="w-full flex items-center justify-center gap-2 rounded-md border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                className="w-full flex items-center justify-center gap-2 rounded-md border bg-white dark:bg-gray-900 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:ring-offset-2"
               >
                 <svg viewBox="0 0 24 24" className="h-5 w-5">
                   <path
@@ -141,9 +148,9 @@ export default function LoginPage() {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="you@example.com"
                   required
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600"
                 />
               </div>
 
@@ -158,8 +165,9 @@ export default function LoginPage() {
                   id="password"
                   name="password"
                   type="password"
+                  placeholder="********"
                   required
-                  className="w-full px-3 py-2 rounded-md border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-input"
+                  className="w-full px-3 py-2 rounded-md border bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:focus:ring-gray-700 focus:border-gray-300 dark:focus:border-gray-600"
                 />
               </div>
 
@@ -192,14 +200,21 @@ export default function LoginPage() {
       </div>
 
       {/* Right side - Mountain Background */}
-      <div className="relative hidden md:block">
-        <div className="absolute inset-0 bg-gradient-to-br from-black/30 to-transparent z-10" />
+      <div className="relative hidden md:block h-full bg-gray-100">
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-transparent to-transparent z-10" />
         <Image
-          src="/mountains.jpg"
-          alt="Mountain landscape with pine trees"
+          src="https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&q=80&w=2070"
+          alt="Sunrise over mountain peaks"
           fill
           className="object-cover"
           priority
+          sizes="(max-width: 768px) 100vw, 50vw"
+          quality={100}
+          onError={(e) => {
+            console.error('Image failed to load:', e);
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+          }}
         />
       </div>
     </div>
