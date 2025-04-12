@@ -1,6 +1,5 @@
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Test, TestingModule } from '@nestjs/testing';
 import { User } from '../../users/user.entity';
 import jwtConfig from '../config/jwt.config';
 import { GenerateTokensProvider } from './generate-tokens.provider';
@@ -10,7 +9,7 @@ describe('GenerateTokensProvider', () => {
   let mockJwtService: Partial<JwtService>;
   let mockJwtConfig: Partial<ConfigType<typeof jwtConfig>>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     mockJwtService = {
       signAsync: jest.fn(),
     };
@@ -21,23 +20,14 @@ describe('GenerateTokensProvider', () => {
       audience: 'test_audience',
       accessTokenTtl: 3600,
       refreshTokenTtl: 86400,
+      googleClientId: 'google_client_id',
+      googleClientSecret: 'google_client_secret',
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        GenerateTokensProvider,
-        {
-          provide: JwtService,
-          useValue: mockJwtService,
-        },
-        {
-          provide: jwtConfig.KEY,
-          useValue: mockJwtConfig,
-        },
-      ],
-    }).compile();
-
-    provider = module.get<GenerateTokensProvider>(GenerateTokensProvider);
+    provider = new GenerateTokensProvider(
+      mockJwtService as JwtService,
+      mockJwtConfig as ConfigType<typeof jwtConfig>,
+    );
   });
 
   it('should be defined', () => {

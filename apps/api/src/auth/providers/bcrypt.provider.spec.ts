@@ -1,17 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import * as bcrypt from 'bcrypt';
 import { BcryptProvider } from './bcrypt.provider';
 
-jest.mock('bcrypt', () => ({
-  genSalt: jest.fn(),
-  hash: jest.fn(),
-  compare: jest.fn(),
-}));
+// Mock bcrypt before importing
+jest.mock('bcrypt', () => {
+  return {
+    genSalt: jest.fn(),
+    hash: jest.fn(),
+    compare: jest.fn(),
+  };
+});
+
+// Import bcrypt after mocking
+import * as bcrypt from 'bcrypt';
 
 describe('BcryptProvider', () => {
   let provider: BcryptProvider;
 
+  // Cast the mocked functions with proper type
+  const mockBcrypt = bcrypt as unknown as {
+    genSalt: jest.Mock;
+    hash: jest.Mock;
+    compare: jest.Mock;
+  };
+
   beforeEach(async () => {
+    // Clear all mocks before each test
+    jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [BcryptProvider],
     }).compile();
@@ -29,13 +44,13 @@ describe('BcryptProvider', () => {
       const password = 'test_password';
       const hashedPassword = 'hashed_password';
 
-      (bcrypt.genSalt as jest.Mock).mockResolvedValue(mockSalt);
-      (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
+      mockBcrypt.genSalt.mockResolvedValue(mockSalt);
+      mockBcrypt.hash.mockResolvedValue(hashedPassword);
 
       const result = await provider.hashPassword(password);
 
-      expect(bcrypt.genSalt).toHaveBeenCalled();
-      expect(bcrypt.hash).toHaveBeenCalledWith(password, mockSalt);
+      expect(mockBcrypt.genSalt).toHaveBeenCalled();
+      expect(mockBcrypt.hash).toHaveBeenCalledWith(password, mockSalt);
       expect(result).toBe(hashedPassword);
     });
 
@@ -44,13 +59,13 @@ describe('BcryptProvider', () => {
       const password = Buffer.from('test_password');
       const hashedPassword = 'hashed_password';
 
-      (bcrypt.genSalt as jest.Mock).mockResolvedValue(mockSalt);
-      (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
+      mockBcrypt.genSalt.mockResolvedValue(mockSalt);
+      mockBcrypt.hash.mockResolvedValue(hashedPassword);
 
       const result = await provider.hashPassword(password);
 
-      expect(bcrypt.genSalt).toHaveBeenCalled();
-      expect(bcrypt.hash).toHaveBeenCalledWith(password, mockSalt);
+      expect(mockBcrypt.genSalt).toHaveBeenCalled();
+      expect(mockBcrypt.hash).toHaveBeenCalledWith(password, mockSalt);
       expect(result).toBe(hashedPassword);
     });
   });
@@ -60,14 +75,14 @@ describe('BcryptProvider', () => {
       const plainTextPassword = 'test_password';
       const encryptedPassword = 'encrypted_password';
 
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      mockBcrypt.compare.mockResolvedValue(true);
 
       const result = await provider.comparePassword(
         plainTextPassword,
         encryptedPassword,
       );
 
-      expect(bcrypt.compare).toHaveBeenCalledWith(
+      expect(mockBcrypt.compare).toHaveBeenCalledWith(
         plainTextPassword,
         encryptedPassword,
       );
@@ -78,14 +93,14 @@ describe('BcryptProvider', () => {
       const plainTextPassword = Buffer.from('test_password');
       const encryptedPassword = 'encrypted_password';
 
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      mockBcrypt.compare.mockResolvedValue(true);
 
       const result = await provider.comparePassword(
         plainTextPassword,
         encryptedPassword,
       );
 
-      expect(bcrypt.compare).toHaveBeenCalledWith(
+      expect(mockBcrypt.compare).toHaveBeenCalledWith(
         plainTextPassword,
         encryptedPassword,
       );
@@ -96,7 +111,7 @@ describe('BcryptProvider', () => {
       const plainTextPassword = 'wrong_password';
       const encryptedPassword = 'encrypted_password';
 
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+      mockBcrypt.compare.mockResolvedValue(false);
 
       const result = await provider.comparePassword(
         plainTextPassword,

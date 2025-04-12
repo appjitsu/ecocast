@@ -2,7 +2,6 @@ import {
   forwardRef,
   Inject,
   Injectable,
-  OnModuleInit,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
@@ -13,25 +12,15 @@ import { GenerateTokensProvider } from '../../providers/generate-tokens.provider
 import { GoogleTokenDto } from '../dtos/google-token.dto';
 
 @Injectable()
-export class GoogleAuthenticationService implements OnModuleInit {
-  private oauthClient: OAuth2Client;
+export class GoogleAuthenticationService {
   constructor(
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     @Inject(forwardRef(() => UsersService))
     private readonly usersService: UsersService,
     private readonly generateTokensProviders: GenerateTokensProvider,
+    private readonly oauthClient: OAuth2Client,
   ) {}
-
-  onModuleInit() {
-    const clientId = this.jwtConfiguration.googleClientId;
-    const clientSecret = this.jwtConfiguration.googleClientSecret;
-
-    this.oauthClient = new OAuth2Client({
-      clientId,
-      clientSecret,
-    });
-  }
 
   public async authenticate(tokenData: GoogleTokenDto) {
     try {

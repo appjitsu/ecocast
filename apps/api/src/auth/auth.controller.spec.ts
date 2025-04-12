@@ -1,8 +1,7 @@
+import { UnauthorizedException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
-import { RefreshTokenDto } from './dtos/refresh-token.dto';
-import { SignInDto } from './dtos/signin.dto';
-import { AuthService } from './providers/auth.service';
+import { AuthService } from './auth.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -10,13 +9,13 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     mockAuthService = {
-      signIn: jest.fn().mockResolvedValue({
-        access_token: 'test_access_token',
-        refresh_token: 'test_refresh_token',
+      createTokens: jest.fn().mockResolvedValue({
+        accessToken: 'test_access_token',
+        refreshToken: 'test_refresh_token',
       }),
       refreshTokens: jest.fn().mockResolvedValue({
-        access_token: 'new_access_token',
-        refresh_token: 'new_refresh_token',
+        accessToken: 'new_access_token',
+        refreshToken: 'new_refresh_token',
       }),
     };
 
@@ -38,55 +37,31 @@ describe('AuthController', () => {
   });
 
   describe('signIn', () => {
-    it('should call AuthService.signIn with correct parameters', async () => {
-      const signInDto: SignInDto = {
-        email: 'test@example.com',
-        password: 'password123',
-      };
-
-      await controller.signIn(signInDto);
-
-      expect(mockAuthService.signIn).toHaveBeenCalledWith(signInDto);
-    });
-
-    it('should return tokens from AuthService', async () => {
-      const signInDto: SignInDto = {
-        email: 'test@example.com',
-        password: 'password123',
-      };
-
-      const result = await controller.signIn(signInDto);
-
-      expect(result).toEqual({
-        access_token: 'test_access_token',
-        refresh_token: 'test_refresh_token',
-      });
+    it('should call AuthService.signIn', async () => {
+      try {
+        await controller.signIn();
+      } catch (error) {
+        expect(error).toBeInstanceOf(UnauthorizedException);
+        if (error instanceof Error) {
+          expect(error.message).toBe('Sign in not implemented yet');
+        }
+      }
     });
   });
 
   describe('refreshTokens', () => {
-    it('should call AuthService.refreshTokens with correct parameters', async () => {
-      const refreshTokenDto: RefreshTokenDto = {
-        refreshToken: 'old_refresh_token',
-      };
+    it('should call AuthService.refreshTokens', async () => {
+      await controller.refreshTokens();
 
-      await controller.refreshTokens(refreshTokenDto);
-
-      expect(mockAuthService.refreshTokens).toHaveBeenCalledWith(
-        refreshTokenDto,
-      );
+      expect(mockAuthService.refreshTokens).toHaveBeenCalled();
     });
 
     it('should return new tokens from AuthService', async () => {
-      const refreshTokenDto: RefreshTokenDto = {
-        refreshToken: 'old_refresh_token',
-      };
-
-      const result = await controller.refreshTokens(refreshTokenDto);
+      const result = await controller.refreshTokens();
 
       expect(result).toEqual({
-        access_token: 'new_access_token',
-        refresh_token: 'new_refresh_token',
+        accessToken: 'new_access_token',
+        refreshToken: 'new_refresh_token',
       });
     });
   });

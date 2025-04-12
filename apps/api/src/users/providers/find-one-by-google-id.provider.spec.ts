@@ -15,7 +15,9 @@ describe('FindOneByGoogleIdProvider', () => {
         {
           provide: getRepositoryToken(User),
           useValue: {
-            findOneBy: jest.fn(),
+            findOneBy: jest.fn(function (this: void) {
+              return Promise.resolve(null);
+            }),
           },
         },
       ],
@@ -40,27 +42,34 @@ describe('FindOneByGoogleIdProvider', () => {
     };
 
     it('should find a user by Google ID successfully', async () => {
+      const findOneByMock = jest.fn().mockResolvedValue(mockUser as User);
       jest
         .spyOn(usersRepository, 'findOneBy')
-        .mockResolvedValue(mockUser as User);
+        .mockImplementation(findOneByMock);
 
       const result = await provider.findOneByGoogleId(googleId);
 
-      expect(usersRepository.findOneBy).toHaveBeenCalledWith({ googleId });
+      expect(findOneByMock).toHaveBeenCalledWith({ googleId });
       expect(result).toEqual(mockUser);
     });
 
     it('should return null if user not found', async () => {
-      jest.spyOn(usersRepository, 'findOneBy').mockResolvedValue(null);
+      const findOneByMock = jest.fn().mockResolvedValue(null);
+      jest
+        .spyOn(usersRepository, 'findOneBy')
+        .mockImplementation(findOneByMock);
 
       const result = await provider.findOneByGoogleId(googleId);
 
-      expect(usersRepository.findOneBy).toHaveBeenCalledWith({ googleId });
+      expect(findOneByMock).toHaveBeenCalledWith({ googleId });
       expect(result).toBeNull();
     });
 
     it('should handle database error gracefully', async () => {
-      jest.spyOn(usersRepository, 'findOneBy').mockRejectedValue(new Error());
+      const findOneByMock = jest.fn().mockRejectedValue(new Error());
+      jest
+        .spyOn(usersRepository, 'findOneBy')
+        .mockImplementation(findOneByMock);
 
       try {
         await provider.findOneByGoogleId(googleId);
@@ -68,7 +77,7 @@ describe('FindOneByGoogleIdProvider', () => {
         expect(error).toBeInstanceOf(Error);
       }
 
-      expect(usersRepository.findOneBy).toHaveBeenCalledWith({ googleId });
+      expect(findOneByMock).toHaveBeenCalledWith({ googleId });
     });
   });
 });

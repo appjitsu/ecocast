@@ -1,7 +1,6 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from '../../users/providers/users.service';
 import { User } from '../../users/user.entity';
 import jwtConfig from '../config/jwt.config';
@@ -16,7 +15,7 @@ describe('RefreshTokensProvider', () => {
   let mockGenerateTokensProvider: Partial<GenerateTokensProvider>;
   let mockJwtConfig: Partial<ConfigType<typeof jwtConfig>>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     mockJwtService = {
       verifyAsync: jest.fn(),
     };
@@ -33,31 +32,18 @@ describe('RefreshTokensProvider', () => {
       secret: 'test_secret',
       issuer: 'test_issuer',
       audience: 'test_audience',
+      accessTokenTtl: 3600,
+      refreshTokenTtl: 86400,
+      googleClientId: 'google_client_id',
+      googleClientSecret: 'google_client_secret',
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        RefreshTokensProvider,
-        {
-          provide: JwtService,
-          useValue: mockJwtService,
-        },
-        {
-          provide: UsersService,
-          useValue: mockUsersService,
-        },
-        {
-          provide: GenerateTokensProvider,
-          useValue: mockGenerateTokensProvider,
-        },
-        {
-          provide: jwtConfig.KEY,
-          useValue: mockJwtConfig,
-        },
-      ],
-    }).compile();
-
-    provider = module.get<RefreshTokensProvider>(RefreshTokensProvider);
+    provider = new RefreshTokensProvider(
+      mockJwtService as JwtService,
+      mockJwtConfig as ConfigType<typeof jwtConfig>,
+      mockGenerateTokensProvider as GenerateTokensProvider,
+      mockUsersService as UsersService,
+    );
   });
 
   it('should be defined', () => {
@@ -106,7 +92,7 @@ describe('RefreshTokensProvider', () => {
     });
 
     it('should throw UnauthorizedException when token verification fails', async () => {
-      (mockJwtService.verifyAsync as jest.Mock).mockRejectedValue(new Error());
+      mockJwtService.verifyAsync = jest.fn().mockRejectedValue(new Error());
 
       await expect(provider.refreshTokens(mockRefreshTokenDto)).rejects.toThrow(
         UnauthorizedException,

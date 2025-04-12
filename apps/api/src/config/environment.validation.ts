@@ -19,16 +19,9 @@ export default z.object({
   NEWS_API_KEY: z.string().min(1, 'News API key is required'),
   OPENAI_API_KEY: z.string().min(1, 'OpenAI API key is required'),
   VOICE_API_KEY: z.string().min(1, 'Voice API key is required'),
-  PORT: z.coerce.number().min(1).max(65535).default(3001),
   DATABASE_URL: z.string().url().optional(),
-  GOOGLE_CLIENT_ID: z
-    .string()
-    .min(1, 'Google client ID is required')
-    .optional(),
-  GOOGLE_CLIENT_SECRET: z
-    .string()
-    .min(1, 'Google client secret is required')
-    .optional(),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
   THROTTLE_TTL: z.coerce.number().default(60),
   THROTTLE_LIMIT: z.coerce.number().default(10),
 });

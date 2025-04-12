@@ -27,7 +27,6 @@ describe('EnvironmentValidation', () => {
         ...validEnv,
         JWT_ACCESS_TOKEN_TTL: 3600,
         JWT_REFRESH_TOKEN_TTL: 86400,
-        PORT: 3001,
         THROTTLE_TTL: 60,
         THROTTLE_LIMIT: 10,
       });
@@ -59,7 +58,6 @@ describe('EnvironmentValidation', () => {
         DATABASE_PORT: 5432,
         JWT_ACCESS_TOKEN_TTL: 3600,
         JWT_REFRESH_TOKEN_TTL: 86400,
-        PORT: 3001,
         THROTTLE_TTL: 60,
         THROTTLE_LIMIT: 10,
       });

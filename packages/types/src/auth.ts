@@ -7,6 +7,7 @@ import { ActiveUser } from './active-user';
 export enum AuthType {
   Bearer = 'Bearer',
   None = 'None',
+  ApiKey = 'ApiKey',
 }
 
 /**
@@ -27,4 +28,14 @@ export const REQUEST_USER_KEY = 'user' as const;
  */
 export interface RequestWithUser extends Request {
   [REQUEST_USER_KEY]: ActiveUser;
+}
+
+/**
+ * Interface for API client information
+ */
+export interface ApiClient {
+  id: number;
+  name: string;
+  roles: string[];
+  isApiClient: boolean;
 }

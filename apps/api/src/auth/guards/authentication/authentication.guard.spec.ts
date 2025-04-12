@@ -4,12 +4,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthType } from '@repo/types';
 import { AUTH_TYPE_KEY } from '../../constants/auth.constants';
 import { AccessTokenGuard } from '../access-token/access-token.guard';
+import { ApiKeyGuard } from '../api-key/api-key.guard';
 import { AuthenticationGuard } from './authentication.guard';
 
 describe('AuthenticationGuard', () => {
   let guard: AuthenticationGuard;
   let mockReflector: Partial<Reflector>;
   let mockAccessTokenGuard: Partial<AccessTokenGuard>;
+  let mockApiKeyGuard: Partial<ApiKeyGuard>;
 
   beforeEach(async () => {
     mockReflector = {
@@ -17,6 +19,10 @@ describe('AuthenticationGuard', () => {
     };
 
     mockAccessTokenGuard = {
+      canActivate: jest.fn(),
+    };
+
+    mockApiKeyGuard = {
       canActivate: jest.fn(),
     };
 
@@ -30,6 +36,10 @@ describe('AuthenticationGuard', () => {
         {
           provide: AccessTokenGuard,
           useValue: mockAccessTokenGuard,
+        },
+        {
+          provide: ApiKeyGuard,
+          useValue: mockApiKeyGuard,
         },
       ],
     }).compile();
@@ -48,7 +58,13 @@ describe('AuthenticationGuard', () => {
       mockExecutionContext = {
         getHandler: jest.fn(),
         getClass: jest.fn(),
-      } as any;
+        getArgs: jest.fn(),
+        getArgByIndex: jest.fn(),
+        switchToRpc: jest.fn(),
+        switchToHttp: jest.fn(),
+        switchToWs: jest.fn(),
+        getType: jest.fn(),
+      } as ExecutionContext;
     });
 
     it('should return true when auth type is None', async () => {

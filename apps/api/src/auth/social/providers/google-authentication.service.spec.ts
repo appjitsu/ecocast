@@ -1,6 +1,6 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { Test, TestingModule } from '@nestjs/testing';
+import { OAuth2Client } from 'google-auth-library';
 import { UsersService } from '../../../users/providers/users.service';
 import jwtConfig from '../../config/jwt.config';
 import { GenerateTokensProvider } from '../../providers/generate-tokens.provider';
@@ -16,19 +16,26 @@ jest.mock('../../../users/user.entity', () => ({
   },
 }));
 
-jest.mock('google-auth-library', () => ({
-  OAuth2Client: jest.fn().mockImplementation(() => ({
-    verifyIdToken: jest.fn(),
-  })),
-}));
+// Mock OAuth2Client
+const mockVerifyIdToken = jest.fn();
+jest.mock('google-auth-library', () => {
+  return {
+    OAuth2Client: jest.fn().mockImplementation(() => {
+      return {
+        verifyIdToken: mockVerifyIdToken,
+      };
+    }),
+  };
+});
 
 describe('GoogleAuthenticationService', () => {
   let service: GoogleAuthenticationService;
   let mockUsersService: Partial<UsersService>;
   let mockGenerateTokensProvider: Partial<GenerateTokensProvider>;
   let mockJwtConfig: Partial<ConfigType<typeof jwtConfig>>;
+  let mockOauthClient: Partial<OAuth2Client>;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     mockUsersService = {
       findOneByGoogleId: jest.fn(),
       createGoogleUser: jest.fn(),
@@ -42,30 +49,23 @@ describe('GoogleAuthenticationService', () => {
     mockJwtConfig = {
       googleClientId: 'test_client_id',
       googleClientSecret: 'test_client_secret',
+      secret: 'test_secret',
+      issuer: 'test_issuer',
+      audience: 'test_audience',
+      accessTokenTtl: 3600,
+      refreshTokenTtl: 86400,
     };
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        GoogleAuthenticationService,
-        {
-          provide: UsersService,
-          useValue: mockUsersService,
-        },
-        {
-          provide: GenerateTokensProvider,
-          useValue: mockGenerateTokensProvider,
-        },
-        {
-          provide: jwtConfig.KEY,
-          useValue: mockJwtConfig,
-        },
-      ],
-    }).compile();
+    mockOauthClient = {
+      verifyIdToken: mockVerifyIdToken,
+    };
 
-    service = module.get<GoogleAuthenticationService>(
-      GoogleAuthenticationService,
+    service = new GoogleAuthenticationService(
+      mockJwtConfig as ConfigType<typeof jwtConfig>,
+      mockUsersService as UsersService,
+      mockGenerateTokensProvider as GenerateTokensProvider,
+      mockOauthClient as OAuth2Client,
     );
-    service.onModuleInit();
   });
 
   it('should be defined', () => {
@@ -78,23 +78,20 @@ describe('GoogleAuthenticationService', () => {
     };
 
     const mockGooglePayload = {
-      email: 'test@example.com',
       sub: 'google_user_id',
-      given_name: 'John',
-      family_name: 'Doe',
+      email: 'test@example.com',
+      given_name: 'Test',
+      family_name: 'User',
     };
 
-    beforeEach(() => {
-      // Reset the mock implementation for each test
-      service['oauthClient'].verifyIdToken = jest.fn().mockResolvedValue({
-        getPayload: () => mockGooglePayload,
-      });
-    });
+    const mockUser = {
+      id: 1,
+      email: 'test@example.com',
+      googleId: 'google_user_id',
+    };
 
     it('should throw UnauthorizedException when token verification fails', async () => {
-      service['oauthClient'].verifyIdToken = jest
-        .fn()
-        .mockRejectedValue(new Error());
+      mockVerifyIdToken.mockRejectedValue(new Error());
 
       await expect(service.authenticate(mockGoogleToken)).rejects.toThrow(
         UnauthorizedException,
@@ -102,8 +99,11 @@ describe('GoogleAuthenticationService', () => {
     });
 
     it('should throw UnauthorizedException when payload is invalid', async () => {
-      service['oauthClient'].verifyIdToken = jest.fn().mockResolvedValue({
-        getPayload: () => ({}),
+      mockVerifyIdToken.mockResolvedValue({
+        getPayload: () => ({
+          sub: undefined,
+          email: undefined,
+        }),
       });
 
       await expect(service.authenticate(mockGoogleToken)).rejects.toThrow(
@@ -112,15 +112,12 @@ describe('GoogleAuthenticationService', () => {
     });
 
     it('should return tokens for existing user', async () => {
-      const existingUser = {
-        id: 1,
-        email: mockGooglePayload.email,
-        googleId: mockGooglePayload.sub,
-      };
-
+      mockVerifyIdToken.mockResolvedValue({
+        getPayload: () => mockGooglePayload,
+      });
       mockUsersService.findOneByGoogleId = jest
         .fn()
-        .mockResolvedValue(existingUser);
+        .mockResolvedValue(mockUser);
 
       const result = await service.authenticate(mockGoogleToken);
 
@@ -128,7 +125,7 @@ describe('GoogleAuthenticationService', () => {
         mockGooglePayload.sub,
       );
       expect(mockGenerateTokensProvider.generateTokens).toHaveBeenCalledWith(
-        existingUser,
+        mockUser,
       );
       expect(result).toEqual({
         access_token: 'test_access_token',
@@ -137,19 +134,17 @@ describe('GoogleAuthenticationService', () => {
     });
 
     it('should create new user and return tokens when user does not exist', async () => {
-      const newUser = {
-        id: 1,
-        email: mockGooglePayload.email,
-        googleId: mockGooglePayload.sub,
-        firstName: mockGooglePayload.given_name,
-        lastName: mockGooglePayload.family_name,
-      };
-
+      mockVerifyIdToken.mockResolvedValue({
+        getPayload: () => mockGooglePayload,
+      });
       mockUsersService.findOneByGoogleId = jest.fn().mockResolvedValue(null);
-      mockUsersService.createGoogleUser = jest.fn().mockResolvedValue(newUser);
+      mockUsersService.createGoogleUser = jest.fn().mockResolvedValue(mockUser);
 
       const result = await service.authenticate(mockGoogleToken);
 
+      expect(mockUsersService.findOneByGoogleId).toHaveBeenCalledWith(
+        mockGooglePayload.sub,
+      );
       expect(mockUsersService.createGoogleUser).toHaveBeenCalledWith({
         email: mockGooglePayload.email,
         googleId: mockGooglePayload.sub,
@@ -157,7 +152,7 @@ describe('GoogleAuthenticationService', () => {
         lastName: mockGooglePayload.family_name,
       });
       expect(mockGenerateTokensProvider.generateTokens).toHaveBeenCalledWith(
-        newUser,
+        mockUser,
       );
       expect(result).toEqual({
         access_token: 'test_access_token',

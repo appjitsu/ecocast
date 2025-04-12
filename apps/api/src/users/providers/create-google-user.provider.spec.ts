@@ -45,27 +45,34 @@ describe('CreateGoogleUserProvider', () => {
 
       jest
         .spyOn(usersRepository, 'create')
-        .mockReturnValue(expectedUser as User);
+        .mockImplementation(() => expectedUser as User);
       jest
         .spyOn(usersRepository, 'save')
-        .mockResolvedValue(expectedUser as User);
+        .mockImplementation(() => Promise.resolve(expectedUser as User));
 
       const result = await provider.createGoogleUser(googleUser);
 
       expect(usersRepository.create).toHaveBeenCalledWith(googleUser);
+
       expect(usersRepository.save).toHaveBeenCalledWith(expectedUser);
       expect(result).toEqual(expectedUser);
     });
 
     it('should throw ConflictException if user with email already exists', async () => {
       const error = new Error('Duplicate entry');
-      jest.spyOn(usersRepository, 'create').mockReturnValue(googleUser as User);
-      jest.spyOn(usersRepository, 'save').mockRejectedValue(error);
+      jest
+        .spyOn(usersRepository, 'create')
+        .mockImplementation(() => googleUser as User);
+      jest
+        .spyOn(usersRepository, 'save')
+        .mockImplementation(() => Promise.reject(error));
 
       await expect(provider.createGoogleUser(googleUser)).rejects.toThrow(
         ConflictException,
       );
+
       expect(usersRepository.create).toHaveBeenCalledWith(googleUser);
+
       expect(usersRepository.save).toHaveBeenCalledWith(googleUser);
     });
   });
