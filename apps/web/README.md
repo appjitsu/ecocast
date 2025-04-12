@@ -1,36 +1,54 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/create-next-app).
+# EcoCast Web App (@repo/web)
+
+This Next.js application serves as the primary user interface for the EcoCast platform. Users can use this application to browse, create, manage, and publish eco-focused content (Casts).
+
+## Features
+
+- **Content Creation & Management**: Rich text editor and tools for creating and managing Casts.
+- **User Authentication**: Login, registration, and profile management integrated with the EcoCast API.
+- **Content Discovery**: Browsing, searching, and filtering Casts.
+- **Interaction**: Commenting and reacting to Casts.
+- **Responsive Design**: UI adapted for various screen sizes using Tailwind CSS.
+- **Shared UI Components**: Utilizes components from the `@repo/ui` package.
+- **TypeScript**: Fully typed codebase.
 
 ## Getting Started
 
-First, run the development server:
+Ensure you have the prerequisites installed (Node.js 18+, pnpm 8+) and run `pnpm install` from the monorepo root.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Set up the necessary environment variables in an `apps/web/.env` file. The primary variable needed is:
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+(Adjust the URL if your API runs on a different port or host).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Development Commands (Run from Monorepo Root)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load Inter, a custom Google Font.
+```bash
+# Start the web app in development mode (usually on port 4000)
+pnpm --filter @repo/web dev
 
-## Learn More
+# Build the web app for production
+pnpm --filter @repo/web build
 
-To learn more about Next.js, take a look at the following resources:
+# Start the production server
+pnpm --filter @repo/web start
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Run linters
+pnpm --filter @repo/web lint
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Key Technologies
 
-## Deploy on Vercel
+- [Next.js](https://nextjs.org/)
+- [React](https://reactjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [TypeScript](https://www.typescriptlang.org/)
+- Shared components from `@repo/ui`
+- Shared utilities from `@repo/utils`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Further Information
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Refer to the main project [README.md](../../README.md) for overall architecture, deployment, and contribution guidelines.
