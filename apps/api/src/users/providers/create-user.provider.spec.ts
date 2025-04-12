@@ -73,13 +73,16 @@ describe('CreateUserProvider', () => {
       expect(usersRepository.findOne).toHaveBeenCalledWith({
         where: { email: createUserDto.email },
       });
+
       expect(hashingProvider.hashPassword).toHaveBeenCalledWith(
         createUserDto.password,
       );
+
       expect(usersRepository.create).toHaveBeenCalledWith({
         ...createUserDto,
         password: hashedPassword,
       });
+
       expect(usersRepository.save).toHaveBeenCalledWith(expectedUser);
       expect(result).toEqual(expectedUser);
     });
@@ -93,6 +96,7 @@ describe('CreateUserProvider', () => {
       await expect(provider.createUser(createUserDto)).rejects.toThrow(
         BadRequestException,
       );
+
       expect(usersRepository.findOne).toHaveBeenCalledWith({
         where: { email: createUserDto.email },
       });

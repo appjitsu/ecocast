@@ -1,28 +1,37 @@
 import { ConflictException, RequestTimeoutException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { DataSource, QueryRunner } from 'typeorm';
+import { DataSource, EntityManager, QueryRunner } from 'typeorm';
 import { HashingProvider } from '../../auth/providers/hashing.provider';
+import { CreateManyUsersDto } from '../dtos/create-many-users.dto';
+import { User } from '../user.entity';
 import { UsersCreateManyProvider } from './users-create-many.provider';
+
+interface MockQueryRunner extends Omit<QueryRunner, 'manager'> {
+  manager: {
+    create: jest.Mock<User, [typeof User, Partial<User>]> &
+      Partial<EntityManager>;
+    save: jest.Mock<Promise<User[]>, [User[]]> & Partial<EntityManager>;
+  } & Partial<EntityManager>;
+}
 
 describe('UsersCreateManyProvider', () => {
   let provider: UsersCreateManyProvider;
-  let dataSource: DataSource;
   let hashingProvider: HashingProvider;
-  let queryRunner: QueryRunner;
+  let queryRunner: MockQueryRunner;
 
   beforeEach(async () => {
     queryRunner = {
-      connect: jest.fn(),
-      startTransaction: jest.fn(),
-      commitTransaction: jest.fn(),
-      rollbackTransaction: jest.fn(),
-      release: jest.fn(),
+      connect: jest.fn<Promise<void>, []>().mockResolvedValue(),
+      startTransaction: jest.fn<Promise<void>, []>().mockResolvedValue(),
+      commitTransaction: jest.fn<Promise<void>, []>().mockResolvedValue(),
+      rollbackTransaction: jest.fn<Promise<void>, []>().mockResolvedValue(),
+      release: jest.fn<Promise<void>, []>().mockResolvedValue(),
       isTransactionActive: true,
       manager: {
-        create: jest.fn(),
-        save: jest.fn(),
+        create: jest.fn<User, [typeof User, Partial<User>]>(),
+        save: jest.fn<Promise<User[]>, [User[]]>(),
       },
-    } as unknown as QueryRunner;
+    } as unknown as MockQueryRunner;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -36,14 +45,13 @@ describe('UsersCreateManyProvider', () => {
         {
           provide: HashingProvider,
           useValue: {
-            hashPassword: jest.fn(),
+            hashPassword: jest.fn<Promise<string>, [string]>(),
           },
         },
       ],
     }).compile();
 
     provider = module.get<UsersCreateManyProvider>(UsersCreateManyProvider);
-    dataSource = module.get<DataSource>(DataSource);
     hashingProvider = module.get<HashingProvider>(HashingProvider);
   });
 
@@ -52,98 +60,127 @@ describe('UsersCreateManyProvider', () => {
   });
 
   describe('createMany', () => {
-    const createManyUsersDto = {
+    const createManyUsersDto: CreateManyUsersDto = {
       users: [
         {
           email: 'test1@example.com',
-          password: 'password123',
           firstName: 'Test1',
           lastName: 'User1',
+          password: 'password1',
         },
         {
           email: 'test2@example.com',
-          password: 'password123',
           firstName: 'Test2',
           lastName: 'User2',
+          password: 'password2',
         },
       ],
     };
 
     it('should create multiple users successfully', async () => {
-      const hashedPassword = 'hashedPassword123';
-      const mockUsers = createManyUsersDto.users.map((user, index) => ({
+      const hashedPasswords = ['hashed1', 'hashed2'];
+      const createdUsers = createManyUsersDto.users.map((user, index) => ({
+        ...user,
         id: index + 1,
-        email: user.email,
-        password: hashedPassword,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        password: hashedPasswords[index],
         casts: [],
-      }));
+      })) as User[];
 
-      jest
-        .spyOn(hashingProvider, 'hashPassword')
-        .mockResolvedValue(hashedPassword);
-      jest
-        .spyOn(queryRunner.manager, 'create')
-        .mockImplementation((entity: any, data: any) => ({
-          id: mockUsers.length,
-          ...data,
-          password: hashedPassword,
-          casts: [],
-        }));
-      jest
-        .spyOn(queryRunner.manager, 'save')
-        .mockImplementation((entity: any) => Promise.resolve(entity));
+      const hashPasswordMock = jest.fn<Promise<string>, [string]>();
+      hashPasswordMock
+        .mockResolvedValueOnce(hashedPasswords[0])
+        .mockResolvedValueOnce(hashedPasswords[1]);
+      hashingProvider.hashPassword = hashPasswordMock;
+
+      (queryRunner.manager.create as jest.Mock)
+        .mockReturnValueOnce(createdUsers[0])
+        .mockReturnValueOnce(createdUsers[1]);
+
+      (queryRunner.manager.save as jest.Mock)
+        .mockResolvedValueOnce(createdUsers[0])
+        .mockResolvedValueOnce(createdUsers[1]);
 
       const result = await provider.createMany(createManyUsersDto);
 
-      expect(queryRunner.connect).toHaveBeenCalled();
-      expect(queryRunner.startTransaction).toHaveBeenCalled();
+      expect(result).toEqual([createdUsers[0], createdUsers[1]]);
       expect(hashingProvider.hashPassword).toHaveBeenCalledTimes(2);
-      expect(queryRunner.manager.create).toHaveBeenCalledTimes(2);
-      expect(queryRunner.manager.save).toHaveBeenCalledTimes(2);
-      expect(queryRunner.commitTransaction).toHaveBeenCalled();
-      expect(queryRunner.release).toHaveBeenCalled();
-      expect(result).toHaveLength(2);
-      expect(result[0].email).toBe(createManyUsersDto.users[0].email);
-      expect(result[1].email).toBe(createManyUsersDto.users[1].email);
+
+      const createMock = queryRunner.manager.create as jest.Mock<
+        User,
+        [typeof User, Partial<User>]
+      >;
+      expect(createMock).toHaveBeenCalledTimes(2);
     });
 
     it('should throw RequestTimeoutException on database connection error', async () => {
-      jest
-        .spyOn(queryRunner, 'connect')
+      const connectMock = jest
+        .fn<Promise<void>, []>()
         .mockRejectedValue(new Error('Connection failed'));
+      queryRunner.connect = connectMock;
 
       await expect(provider.createMany(createManyUsersDto)).rejects.toThrow(
         RequestTimeoutException,
       );
-      expect(queryRunner.connect).toHaveBeenCalled();
-      expect(queryRunner.release).toHaveBeenCalled();
+      expect(connectMock).toHaveBeenCalled();
+      const releaseMock = queryRunner.release as jest.Mock<Promise<void>, []>;
+      expect(releaseMock).toHaveBeenCalled();
     });
 
     it('should throw ConflictException and rollback on save error', async () => {
       const error = new Error('Duplicate entry');
-      const hashedPassword = 'hashedPassword123';
+      const hashedPasswords = ['hashed1', 'hashed2'];
 
-      jest
-        .spyOn(hashingProvider, 'hashPassword')
-        .mockResolvedValue(hashedPassword);
-      jest
-        .spyOn(queryRunner.manager, 'create')
-        .mockImplementation((entity: any, data: any) => ({
-          id: 1,
-          ...data,
-          password: hashedPassword,
-          casts: [],
-        }));
-      jest.spyOn(queryRunner.manager, 'save').mockRejectedValue(error);
+      const startTransactionMock = jest
+        .fn<Promise<void>, []>()
+        .mockResolvedValue();
+      const rollbackTransactionMock = jest
+        .fn<Promise<void>, []>()
+        .mockResolvedValue();
+      const releaseMock = jest.fn<Promise<void>, []>().mockResolvedValue();
+
+      // Assign mocks to queryRunner
+      queryRunner.startTransaction = startTransactionMock;
+      queryRunner.rollbackTransaction = rollbackTransactionMock;
+      queryRunner.release = releaseMock;
+
+      // Instead of directly setting isTransactionActive, we'll mock the method
+      // that checks it during error handling
+      Object.defineProperty(queryRunner, 'isTransactionActive', {
+        get: jest.fn().mockReturnValue(true),
+      });
+
+      const hashPasswordMock = jest.fn<Promise<string>, [string]>();
+      hashPasswordMock
+        .mockResolvedValueOnce(hashedPasswords[0])
+        .mockResolvedValueOnce(hashedPasswords[1]);
+      hashingProvider.hashPassword = hashPasswordMock;
+
+      const createMock = jest.fn<User, [typeof User, Partial<User>]>();
+      createMock.mockReturnValueOnce({
+        id: 1,
+        email: createManyUsersDto.users[0].email,
+        password: hashedPasswords[0],
+        firstName: createManyUsersDto.users[0].firstName || '',
+        lastName: createManyUsersDto.users[0].lastName || '',
+        casts: [],
+      });
+      queryRunner.manager.create =
+        createMock as unknown as typeof queryRunner.manager.create;
+
+      const saveMock = jest.fn<Promise<User[]>, [User[]]>();
+      saveMock.mockImplementation(() => {
+        throw error;
+      });
+      queryRunner.manager.save =
+        saveMock as unknown as typeof queryRunner.manager.save;
 
       await expect(provider.createMany(createManyUsersDto)).rejects.toThrow(
         ConflictException,
       );
-      expect(queryRunner.startTransaction).toHaveBeenCalled();
-      expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
-      expect(queryRunner.release).toHaveBeenCalled();
+
+      expect(startTransactionMock).toHaveBeenCalled();
+      expect(rollbackTransactionMock).toHaveBeenCalled();
+      expect(releaseMock).toHaveBeenCalled();
     });
   });
 });

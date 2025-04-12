@@ -34,10 +34,11 @@ describe('UsersController', () => {
     usersService = module.get<UsersService>(UsersService);
 
     // Bind controller methods
-    getUsers = controller.getUsers.bind(controller);
-    createUsers = controller.createUsers.bind(controller);
-    createManyUsers = controller.createManyUsers.bind(controller);
-    patchUser = controller.patchUser.bind(controller);
+    getUsers = (id: number) => controller.getUsers(id);
+    createUsers = (dto: CreateUserDto) => controller.createUsers(dto);
+    createManyUsers = (dto: CreateManyUsersDto) =>
+      controller.createManyUsers(dto);
+    patchUser = (dto: PatchUserDto) => controller.patchUser(dto);
   });
 
   it('should be defined', () => {
@@ -48,12 +49,12 @@ describe('UsersController', () => {
     it('should get a user by id', async () => {
       const userId = 1;
       const mockUser: User = {
-        id: userId,
+        id: 1,
         email: 'test@example.com',
         firstName: 'Test',
         lastName: 'User',
         password: 'hashedPassword',
-        casts: [] as Cast[],
+        casts: [],
       };
 
       jest.spyOn(usersService, 'findOneById').mockResolvedValue(mockUser);
@@ -61,6 +62,7 @@ describe('UsersController', () => {
       const result = await getUsers(userId);
 
       expect(result).toEqual(mockUser);
+
       expect(usersService.findOneById).toHaveBeenCalledWith(userId);
     });
   });
@@ -83,12 +85,14 @@ describe('UsersController', () => {
         casts: [] as Cast[],
       };
 
-      jest.spyOn(usersService, 'createUser').mockResolvedValue(mockUser);
+      const createUserSpy = jest
+        .spyOn(usersService, 'createUser')
+        .mockResolvedValue(mockUser);
 
       const result = await createUsers(createUserDto);
 
       expect(result).toEqual(mockUser);
-      expect(usersService.createUser).toHaveBeenCalledWith(createUserDto);
+      expect(createUserSpy).toHaveBeenCalledWith(createUserDto);
     });
   });
 
@@ -120,12 +124,14 @@ describe('UsersController', () => {
         casts: [] as Cast[],
       }));
 
-      jest.spyOn(usersService, 'createMany').mockResolvedValue(mockUsers);
+      const createManySpy = jest
+        .spyOn(usersService, 'createMany')
+        .mockResolvedValue(mockUsers);
 
       const result = await createManyUsers(createManyUsersDto);
 
       expect(result).toEqual(mockUsers);
-      expect(usersService.createMany).toHaveBeenCalledWith(createManyUsersDto);
+      expect(createManySpy).toHaveBeenCalledWith(createManyUsersDto);
     });
   });
 

@@ -109,10 +109,25 @@ describe('UsersService', () => {
       const expectedUser = { id: 1, ...createUserDto };
       jest
         .spyOn(createUserProvider, 'createUser')
-        .mockResolvedValue(expectedUser as User);
+        .mockImplementation(() => Promise.resolve(expectedUser as User));
 
       const result = await service.createUser(createUserDto);
+
+      expect(createUserProvider.createUser).toHaveBeenCalledWith(createUserDto);
       expect(result).toEqual(expectedUser);
+    });
+
+    it('should throw RequestTimeoutException on database error', async () => {
+      jest
+        .spyOn(createUserProvider, 'createUser')
+        .mockImplementation(() =>
+          Promise.reject(new RequestTimeoutException()),
+        );
+
+      await expect(service.createUser(createUserDto)).rejects.toThrow(
+        RequestTimeoutException,
+      );
+
       expect(createUserProvider.createUser).toHaveBeenCalledWith(createUserDto);
     });
   });
@@ -124,15 +139,20 @@ describe('UsersService', () => {
     it('should return a user when found', async () => {
       jest
         .spyOn(usersRepository, 'findOneBy')
-        .mockResolvedValue(mockUser as User);
+        .mockImplementation(() => Promise.resolve(mockUser as User));
 
       const result = await service.findOneById(userId);
+
+      expect(usersRepository.findOneBy).toHaveBeenCalledWith({
+        id: userId,
+      });
       expect(result).toEqual(mockUser);
-      expect(usersRepository.findOneBy).toHaveBeenCalledWith({ id: userId });
     });
 
     it('should throw BadRequestException when user not found', async () => {
-      jest.spyOn(usersRepository, 'findOneBy').mockResolvedValue(null);
+      jest
+        .spyOn(usersRepository, 'findOneBy')
+        .mockImplementation(() => Promise.resolve(null));
 
       await expect(service.findOneById(userId)).rejects.toThrow(
         BadRequestException,
@@ -140,7 +160,9 @@ describe('UsersService', () => {
     });
 
     it('should throw RequestTimeoutException on database error', async () => {
-      jest.spyOn(usersRepository, 'findOneBy').mockRejectedValue(new Error());
+      jest
+        .spyOn(usersRepository, 'findOneBy')
+        .mockImplementation(() => Promise.reject(new Error()));
 
       await expect(service.findOneById(userId)).rejects.toThrow(
         RequestTimeoutException,
@@ -173,13 +195,14 @@ describe('UsersService', () => {
       }));
       jest
         .spyOn(usersCreateManyProvider, 'createMany')
-        .mockResolvedValue(expectedUsers as User[]);
+        .mockImplementation(() => Promise.resolve(expectedUsers as User[]));
 
       const result = await service.createMany(createManyDto);
-      expect(result).toEqual(expectedUsers);
+
       expect(usersCreateManyProvider.createMany).toHaveBeenCalledWith(
         createManyDto,
       );
+      expect(result).toEqual(expectedUsers);
     });
   });
 
@@ -187,16 +210,17 @@ describe('UsersService', () => {
     const email = 'test@example.com';
     const mockUser = { id: 1, email };
 
-    it('should find a user by email successfully', async () => {
+    it('should find a user by email', async () => {
       jest
         .spyOn(findOneUserByEmailProvider, 'findOneByEmail')
-        .mockResolvedValue(mockUser as User);
+        .mockImplementation(() => Promise.resolve(mockUser as User));
 
       const result = await service.findOneByEmail(email);
-      expect(result).toEqual(mockUser);
+
       expect(findOneUserByEmailProvider.findOneByEmail).toHaveBeenCalledWith(
         email,
       );
+      expect(result).toEqual(mockUser);
     });
   });
 
@@ -204,16 +228,17 @@ describe('UsersService', () => {
     const googleId = 'google123';
     const mockUser = { id: 1, googleId };
 
-    it('should find a user by Google ID successfully', async () => {
+    it('should find a user by Google ID', async () => {
       jest
         .spyOn(findOneByGoogleIdProvider, 'findOneByGoogleId')
-        .mockResolvedValue(mockUser as User);
+        .mockImplementation(() => Promise.resolve(mockUser as User));
 
       const result = await service.findOneByGoogleId(googleId);
-      expect(result).toEqual(mockUser);
+
       expect(findOneByGoogleIdProvider.findOneByGoogleId).toHaveBeenCalledWith(
         googleId,
       );
+      expect(result).toEqual(mockUser);
     });
   });
 
@@ -229,13 +254,14 @@ describe('UsersService', () => {
       const expectedUser = { id: 1, ...googleUser };
       jest
         .spyOn(createGoogleUserProvider, 'createGoogleUser')
-        .mockResolvedValue(expectedUser as User);
+        .mockImplementation(() => Promise.resolve(expectedUser as User));
 
       const result = await service.createGoogleUser(googleUser);
-      expect(result).toEqual(expectedUser);
+
       expect(createGoogleUserProvider.createGoogleUser).toHaveBeenCalledWith(
         googleUser,
       );
+      expect(result).toEqual(expectedUser);
     });
   });
 });

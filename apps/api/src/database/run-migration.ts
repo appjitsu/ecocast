@@ -33,4 +33,7 @@ async function runMigration() {
   }
 }
 
-runMigration();
+void runMigration().catch((error) => {
+  console.error('Error running migrations:', error);
+  process.exit(1);
+});

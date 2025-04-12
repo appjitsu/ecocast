@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
+import { SharedModule } from '../shared/shared.module';
 import profileConfig from './config/profile.config';
 import { CreateGoogleUserProvider } from './providers/create-google-user.provider';
 import { CreateUserProvider } from './providers/create-user.provider';
@@ -26,6 +27,7 @@ import { UsersController } from './users.controller';
   imports: [
     TypeOrmModule.forFeature([User]),
     ConfigModule.forFeature(profileConfig),
+    SharedModule,
     forwardRef(() => AuthModule),
   ],
 })

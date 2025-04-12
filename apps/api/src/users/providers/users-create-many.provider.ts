@@ -30,7 +30,7 @@ export class UsersCreateManyProvider {
         throw new RequestTimeoutException(
           'Unable to process your request at the moment please try later',
           {
-            description: 'Error connecting to the database',
+            description: `Error connecting to the database: ${error instanceof Error ? error.message : 'Unknown error'}`,
           },
         );
       }

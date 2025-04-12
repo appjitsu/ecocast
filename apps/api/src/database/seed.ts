@@ -24,4 +24,7 @@ async function seed() {
   }
 }
 
-seed();
+void seed().catch((error) => {
+  console.error('Unhandled error during seeding:', error);
+  process.exit(1);
+});
