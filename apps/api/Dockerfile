@@ -41,16 +41,21 @@ COPY --from=builder /usr/src/app/package.json ./
 COPY --from=builder /usr/src/app/pnpm-lock.yaml ./
 COPY --from=builder /usr/src/app/pnpm-workspace.yaml ./
 COPY --from=builder /usr/src/app/apps/api/package.json ./apps/api/
-# If using shared packages, copy their package.json too
-# COPY --from=builder /usr/src/app/packages/common/package.json ./packages/common/
+# Copy package.json for workspace dependencies needed to resolve workspace:* protocol
+COPY --from=builder /usr/src/app/packages/types/package.json ./packages/types/
+COPY --from=builder /usr/src/app/packages/utils/package.json ./packages/utils/
+# Add copies for any other workspace packages referenced by api
 
 # Reinstall ONLY production dependencies based on lockfile
+# This will correctly link workspace dependencies like @repo/types, @repo/utils
 RUN pnpm install --prod --ignore-scripts
 
 # Copy build artifacts from builder stage AFTER reinstalling deps
 COPY --from=builder /usr/src/app/apps/api/dist ./apps/api/dist
-# If using shared packages, copy their dist too
-# COPY --from=builder /usr/src/app/packages/common/dist ./packages/common/dist
+# Copy dist folders for linked workspace packages
+COPY --from=builder /usr/src/app/packages/types/dist ./packages/types/dist
+COPY --from=builder /usr/src/app/packages/utils/dist ./packages/utils/dist
+# Add copies for any other workspace packages referenced by api
 
 # Expose the port the app runs on
 EXPOSE 3000
