@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+# Add permissions for OIDC
+permissions:
+  id-token: write # Required for requesting the JWT
+  contents: read # Required for actions/checkout
+
 jobs:
   lint:
     name: Lint
@@ -20,7 +25,7 @@ jobs:
           node-version: '18'
           cache: 'pnpm'
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Run lint
         run: pnpm lint
 
@@ -37,7 +42,7 @@ jobs:
           node-version: '18'
           cache: 'pnpm'
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Run type check
         run: pnpm check-types
 
@@ -68,12 +73,12 @@ jobs:
           node-version: '18'
           cache: 'pnpm'
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Run tests
         run: pnpm test
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ecocast_test
-          JWT_SECRET: test_secret_key
+          JWT_SECRET: test_secret_key # Use a dummy secret for testing
 
   build:
     name: Build
@@ -89,32 +94,159 @@ jobs:
           node-version: '18'
           cache: 'pnpm'
       - name: Install dependencies
-        run: pnpm install
-      - name: Build
+        run: pnpm install --frozen-lockfile
+      - name: Build all apps and packages
         run: pnpm build
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-artifacts
-          path: |
-            apps/web/.next
-            apps/api/dist
+      # No artifact upload needed for deployment jobs as they rebuild/re-pull
 
-  deploy:
-    name: Deploy
+  # --- Deployment Jobs --- #
+  # These jobs run only on push events to the main branch
+
+  deploy-backend:
+    name: Deploy Backend to ECS
     runs-on: ubuntu-latest
     needs: [build]
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production # Optional: Define a GitHub environment for protection rules
     steps:
-      - uses: actions/checkout@v4
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          name: build-artifacts
-      - name: Run E2E Tests
-        if: matrix.node-version == 18 # Only run E2E on one version
-        run: pnpm test:e2e --filter=@repo/api
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
         env:
-          # Add necessary env vars for E2E tests
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ecocast_test
-          JWT_SECRET: test-secret-key
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          # Note: ECR_REPOSITORY_URI might contain the registry name already.
+          # This script assumes it's just the repo name (e.g., my-repo) or path (e.g., my-namespace/my-repo)
+          # Adjust REPO_NAME extraction if your secret contains the full URI (registry/repo)
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Example: Extract repo name if URI is like 123456789012.dkr.ecr.region.amazonaws.com/my-repo
+          # REPO_NAME=$(echo $ECR_REPOSITORY | cut -d'/' -f2-)
+          # If ECR_REPOSITORY_URI secret *is* just the name, use it directly:
+          REPO_NAME=$ECR_REPOSITORY
+          IMAGE_URI=$ECR_REGISTRY/$REPO_NAME:$IMAGE_TAG
+          echo "Building image $IMAGE_URI..."
+          docker build -t $IMAGE_URI -f apps/api/Dockerfile .
+          echo "Pushing image $IMAGE_URI..."
+          docker push $IMAGE_URI
+          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
+
+      - name: Run Database Migrations
+        id: run-migration
+        env:
+          CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
+          MIGRATION_TASK_DEF_ARN: ${{ secrets.ECS_MIGRATION_TASK_DEFINITION_ARN }}
+          SUBNETS: ${{ secrets.PRIVATE_SUBNET_IDS }}
+          SECURITY_GROUPS: ${{ secrets.ECS_SECURITY_GROUP_ID }}
+          CONTAINER_NAME: ApiContainer # Must match container name in CDK
+          IMAGE_URI: ${{ steps.build-image.outputs.image }}
+        run: |
+          echo "Starting migration task..."
+          TASK_ARN=$(aws ecs run-task \
+            --cluster $CLUSTER_NAME \
+            --task-definition $MIGRATION_TASK_DEF_ARN \
+            --launch-type FARGATE \
+            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECURITY_GROUPS],assignPublicIp=DISABLED}" \
+            --overrides '{ "containerOverrides": [{ "name": "'$CONTAINER_NAME'", "image": "'$IMAGE_URI'" }] }' \
+            --query 'tasks[0].taskArn' --output text)
+
+          if [ -z "$TASK_ARN" ]; then
+            echo "::error::Failed to start migration task."
+            exit 1
+          fi
+          echo "Migration task started: $TASK_ARN"
+          echo "task_arn=$TASK_ARN" >> $GITHUB_OUTPUT
+
+          echo "Waiting for migration task ($TASK_ARN) to complete..."
+          aws ecs wait tasks-stopped --cluster $CLUSTER_NAME --tasks $TASK_ARN
+
+          echo "Checking migration task status..."
+          # Check the exit code of the container
+          EXIT_CODE=$(aws ecs describe-tasks --cluster $CLUSTER_NAME --tasks $TASK_ARN --query 'tasks[0].containers[?name==`'$CONTAINER_NAME'`].exitCode | [0]' --output text)
+
+          echo "Migration task exit code: $EXIT_CODE"
+
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "::error::Migration task failed with exit code $EXIT_CODE. Check ECS task logs for details (Log Group: /ecs/ecocast-api, Stream Prefix: migration)."
+            # Optional: Fetch and print last part of logs
+            # LOG_STREAM_NAME=$(aws ecs describe-tasks --cluster $CLUSTER_NAME --tasks $TASK_ARN --query 'tasks[0].containers[?name==`'$CONTAINER_NAME'`].logConfiguration.options."awslogs-stream-prefix" | [0]' --output text)
+            # aws logs get-log-events --log-group-name /ecs/ecocast-api --log-stream-name "$LOG_STREAM_NAME/[$CONTAINER_NAME]/$TASK_ARN" --limit 100
+            exit 1
+          else
+            echo "Migration task completed successfully."
+          fi
+
+      - name: Render Amazon ECS task definition (for API service)
+        id: render-api-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ secrets.ECS_TASK_DEFINITION_ARN }} # API task definition
+          container-name: ApiContainer
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition (for API service)
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-api-task-def.outputs.task-definition }}
+          service: ${{ secrets.ECS_SERVICE_NAME }}
+          cluster: ${{ secrets.ECS_CLUSTER_NAME }}
+          wait-for-service-stability: true
+
+  deploy-frontend:
+    name: Deploy Frontend to S3/CloudFront
+    runs-on: ubuntu-latest
+    needs: [deploy-backend] # Run after backend is deployed
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production # Optional: Define a GitHub environment
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8.15.4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build and export Next.js static site
+        run: pnpm build --filter=web
+        env:
+          # Provide the backend URL to the Next.js build process
+          NEXT_PUBLIC_API_URL: ${{ secrets.BACKEND_SERVICE_URL }}
+          # Set NODE_ENV if required by build scripts
+          NODE_ENV: production
+
+      - name: Deploy static site to S3
+        run: |
+          aws s3 sync ./apps/web/out s3://${{ secrets.FRONTEND_S3_BUCKET_NAME }} --delete
+        # Assumes the build output is in apps/web/out
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.FRONTEND_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"

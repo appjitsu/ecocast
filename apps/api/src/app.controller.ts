@@ -1,14 +1,17 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import * as os from 'os';
+import { AppService } from './app.service';
 
 @ApiTags('system')
 @Controller()
 export class AppController {
   private startTime = Date.now();
+  constructor(private readonly appService: AppService) {}
 
   @ApiOperation({ summary: 'Check system health' })
   @Get('/health')
+  @HttpCode(HttpStatus.OK)
   healthCheck() {
     return {
       status: 'ok',

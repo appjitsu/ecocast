@@ -39,3 +39,6 @@ yarn-error.log*
 
 # Bundler temp files
 *.bundled_*.mjs
+
+# CDK
+cdk.out
