@@ -240,19 +240,16 @@ export class EcocastStack extends cdk.Stack {
       securityGroups: [serviceSecurityGroup],
       serviceName: 'ecocast-api-service',
       circuitBreaker: {
-        rollback: false, // Disable rollback on deployment failure
+        rollback: true, // Enable rollback on deployment failure
       },
     });
-
-    // Add a tag to force an update
-    cdk.Tags.of(fargateService).add('ForceUpdate', new Date().toISOString());
 
     // Connect ALB to Fargate Service
     listener.addTargets('ApiTargetGroup', {
       port: 80,
       targets: [fargateService],
       healthCheck: {
-        path: '/healthz', // Change path to force update
+        path: '/health', // TODO: Ensure your NestJS app has a /health endpoint
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(5),
         healthyThresholdCount: 2,
@@ -343,8 +340,10 @@ export class EcocastStack extends cdk.Stack {
             'token.actions.githubusercontent.com:aud': 'sts.amazonaws.com',
           },
           StringLike: {
-            // Scopes the role to your specific repository and main branch
-            'token.actions.githubusercontent.com:sub': `repo:${githubOrg}/${githubRepo}:ref:refs/heads/main`,
+            // Scopes the role to your specific repository, main branch, and environment
+            'token.actions.githubusercontent.com:sub': `repo:${githubOrg}/${githubRepo}:environment:production`,
+            // Alternatively, you might restrict by ref only if needed for other branches/PRs
+            // 'token.actions.githubusercontent.com:sub': `repo:${githubOrg}/${githubRepo}:ref:refs/heads/main`,
           },
         },
         'sts:AssumeRoleWithWebIdentity', // Action required for OIDC

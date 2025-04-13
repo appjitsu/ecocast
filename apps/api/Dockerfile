@@ -41,16 +41,9 @@ FROM node:18-alpine
 WORKDIR /usr/src/app
 
 # Copy production node_modules and build output from the builder stage
-# Copy root node_modules (less likely to be needed if package node_modules are copied)
-# COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/apps/api/dist ./apps/api/dist
 COPY --from=builder /usr/src/app/apps/api/package.json ./apps/api/
-# If api depends on other workspace packages (e.g., packages/common), copy their node_modules and dist too:
-# COPY --from=builder /usr/src/app/packages/common/node_modules ./packages/common/node_modules
-# COPY --from=builder /usr/src/app/packages/common/dist ./packages/common/dist
-# COPY --from=builder /usr/src/app/packages/common/package.json ./packages/common/
-
 # Copy root package.json if needed by the runtime (e.g., for scripts)
 # COPY --from=builder /usr/src/app/package.json ./
 
