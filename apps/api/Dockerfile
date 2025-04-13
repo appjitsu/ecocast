@@ -25,32 +25,32 @@ RUN pnpm install --frozen-lockfile --ignore-scripts
 # Build the specific api application using Turbo
 RUN pnpm exec turbo run build --filter=@repo/api...
 
-# Prune development dependencies AFTER build from the entire workspace
-RUN pnpm prune --prod
+# --- Pruning removed, will reinstall prod deps in final stage ---
+# RUN pnpm prune --prod
 
 # Stage 2: Production image
 FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
-# Install pnpm in production stage to support migrations
+# Install pnpm in production stage
 RUN npm install -g pnpm@8.15.4
 
-# Copy necessary node_modules (adjust if shared packages are used)
-COPY --from=builder /usr/src/app/apps/api/node_modules ./apps/api/node_modules
-# COPY --from=builder /usr/src/app/packages/common/node_modules ./packages/common/node_modules # Example for shared package
-
-# Copy build artifacts
-COPY --from=builder /usr/src/app/apps/api/dist ./apps/api/dist
-# COPY --from=builder /usr/src/app/packages/common/dist ./packages/common/dist # Example for shared package
-
-# Copy necessary package.json files
-COPY --from=builder /usr/src/app/apps/api/package.json ./apps/api/
-# COPY --from=builder /usr/src/app/packages/common/package.json ./packages/common/ # Example for shared package
-
-# Copy root package files needed for pnpm run in production image
+# Copy necessary package configuration files from builder
 COPY --from=builder /usr/src/app/package.json ./
 COPY --from=builder /usr/src/app/pnpm-lock.yaml ./
+COPY --from=builder /usr/src/app/pnpm-workspace.yaml ./
+COPY --from=builder /usr/src/app/apps/api/package.json ./apps/api/
+# If using shared packages, copy their package.json too
+# COPY --from=builder /usr/src/app/packages/common/package.json ./packages/common/
+
+# Reinstall ONLY production dependencies based on lockfile
+RUN pnpm install --prod --ignore-scripts
+
+# Copy build artifacts from builder stage AFTER reinstalling deps
+COPY --from=builder /usr/src/app/apps/api/dist ./apps/api/dist
+# If using shared packages, copy their dist too
+# COPY --from=builder /usr/src/app/packages/common/dist ./packages/common/dist
 
 # Expose the port the app runs on
 EXPOSE 3000
@@ -59,5 +59,4 @@ EXPOSE 3000
 ENV NODE_ENV production
 
 # Command to run the application
-# Assumes your entrypoint is dist/main.js within the api package
 CMD ["node", "apps/api/dist/main.js"]
