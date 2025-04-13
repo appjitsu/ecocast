@@ -106,7 +106,7 @@ export default function Header() {
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left">
+            <SheetContent side="left" className="w-4/5 sm:max-w-none">
               <SheetHeader className="border-b pb-4 mb-4">
                 <SheetTitle>
                   <Link
@@ -122,7 +122,7 @@ export default function Header() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute right-4 top-1.5 rounded-md bg-secondary"
+                    className="absolute right-4 rounded-md bg-secondary"
                   >
                     <X className="h-4 w-4" />
                     <span className="sr-only">Close</span>

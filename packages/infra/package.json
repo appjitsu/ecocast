@@ -5,16 +5,19 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "lint": "eslint . --ext .ts"
   },
   "devDependencies": {
-    "@types/node": "^18.19.1",
+    "@repo/eslint-config": "workspace:*",
+    "@types/node": "^22.14.1",
+    "eslint": "^9.24.0",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "aws-cdk": "^2.150.0",
-    "aws-cdk-lib": "^2.150.0",
-    "constructs": "^10.3.0",
+    "aws-cdk": "^2.1007.0",
+    "aws-cdk-lib": "^2.189.0",
+    "constructs": "^10.4.2",
     "source-map-support": "^0.5.21"
   }
 }

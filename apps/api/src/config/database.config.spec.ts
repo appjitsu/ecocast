@@ -15,11 +15,11 @@ describe('DatabaseConfig', () => {
 
   it('should load default values when environment variables are not set', () => {
     // Ensure relevant env vars are unset
-    delete process.env.DB_HOST;
-    delete process.env.DB_PORT;
-    delete process.env.DB_USERNAME;
-    delete process.env.DB_PASSWORD;
-    delete process.env.DB_NAME;
+    delete process.env.DATABASE_HOST;
+    delete process.env.DATABASE_PORT;
+    delete process.env.DATABASE_USERNAME;
+    delete process.env.DATABASE_PASSWORD;
+    delete process.env.DATABASE_NAME;
     // Add others if needed for defaults
 
     const config = databaseConfig();
@@ -35,20 +35,20 @@ describe('DatabaseConfig', () => {
   });
 
   it('should load values from environment variables', () => {
-    // Set test environment variables using DB_* names
-    process.env.DB_HOST = 'test-host';
-    process.env.DB_PORT = '5433';
-    process.env.DB_USERNAME = 'test-user';
-    process.env.DB_PASSWORD = 'test-password';
-    process.env.DB_NAME = 'test-db';
+    // Set test environment variables using DATABASE_* names
+    process.env.DATABASE_HOST = 'test-host';
+    process.env.DATABASE_PORT = '5433';
+    process.env.DATABASE_USER = 'test-user';
+    process.env.DATABASE_PASSWORD = 'test-password';
+    process.env.DATABASE_NAME = 'test-db';
     process.env.DATABASE_SYNC = 'true';
     process.env.DATABASE_AUTOLOAD = 'false';
     process.env.DATABASE_LOGGING = 'true';
-    process.env.DB_POOL_SIZE = '20';
-    process.env.DB_SSL = 'true';
-    process.env.DB_REJECT_UNAUTHORIZED = 'false';
-    process.env.DB_SLOW_QUERY_THRESHOLD = '500';
-    process.env.DB_LOG_ALL_QUERIES = 'true';
+    process.env.DATABASE_POOL_SIZE = '20';
+    process.env.DATABASE_SSL = 'true';
+    process.env.DATABASE_REJECT_UNAUTHORIZED = 'false';
+    process.env.DATABASE_SLOW_QUERY_THRESHOLD = '500';
+    process.env.DATABASE_LOG_ALL_QUERIES = 'true';
 
     const config = databaseConfig();
 
@@ -69,11 +69,11 @@ describe('DatabaseConfig', () => {
 
   it('should handle empty environment variables', () => {
     // Set empty environment variables
-    process.env.DB_HOST = ''; // Test edge case
-    process.env.DB_PORT = ''; // Test edge case for parseInt
-    process.env.DB_USERNAME = '';
-    process.env.DB_PASSWORD = '';
-    process.env.DB_NAME = '';
+    process.env.DATABASE_HOST = ''; // Test edge case
+    process.env.DATABASE_PORT = ''; // Test edge case for parseInt
+    process.env.DATABASE_USER = '';
+    process.env.DATABASE_PASSWORD = '';
+    process.env.DATABASE_NAME = '';
 
     const config = databaseConfig();
 
@@ -85,9 +85,9 @@ describe('DatabaseConfig', () => {
   });
 
   it('should correctly parse numeric values with defaults', () => {
-    delete process.env.DB_PORT;
-    delete process.env.DB_POOL_SIZE;
-    delete process.env.DB_SLOW_QUERY_THRESHOLD;
+    delete process.env.DATABASE_PORT;
+    delete process.env.DATABASE_POOL_SIZE;
+    delete process.env.DATABASE_SLOW_QUERY_THRESHOLD;
 
     const config = databaseConfig();
     expect(config.port).toBe(5432);
@@ -96,9 +96,9 @@ describe('DatabaseConfig', () => {
   });
 
   it('should correctly parse boolean values with defaults', () => {
-    delete process.env.DB_SSL;
-    delete process.env.DB_REJECT_UNAUTHORIZED;
-    delete process.env.DB_LOG_ALL_QUERIES;
+    delete process.env.DATABASE_SSL;
+    delete process.env.DATABASE_REJECT_UNAUTHORIZED;
+    delete process.env.DATABASE_LOG_ALL_QUERIES;
 
     const config = databaseConfig();
     expect(config.ssl).toBe(false);

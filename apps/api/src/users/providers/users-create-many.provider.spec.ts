@@ -1,6 +1,6 @@
 import { ConflictException, RequestTimeoutException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { DataSource, EntityManager, QueryRunner } from 'typeorm';
+import { DataSource, QueryRunner } from 'typeorm';
 import { HashingProvider } from '../../auth/providers/hashing.provider';
 import { CreateManyUsersDto } from '../dtos/create-many-users.dto';
 import { User } from '../user.entity';
@@ -8,10 +8,9 @@ import { UsersCreateManyProvider } from './users-create-many.provider';
 
 interface MockQueryRunner extends Omit<QueryRunner, 'manager'> {
   manager: {
-    create: jest.Mock<User, [typeof User, Partial<User>]> &
-      Partial<EntityManager>;
-    save: jest.Mock<Promise<User[]>, [User[]]> & Partial<EntityManager>;
-  } & Partial<EntityManager>;
+    create: jest.Mock<User, [typeof User, Partial<User>]>;
+    save: jest.Mock<Promise<User[]>, [User[]]>;
+  };
 }
 
 describe('UsersCreateManyProvider', () => {
@@ -105,10 +104,7 @@ describe('UsersCreateManyProvider', () => {
       expect(result).toEqual([createdUsers[0], createdUsers[1]]);
       expect(hashingProvider.hashPassword).toHaveBeenCalledTimes(2);
 
-      const createMock = queryRunner.manager.create as jest.Mock<
-        User,
-        [typeof User, Partial<User>]
-      >;
+      const createMock = queryRunner.manager.create;
       expect(createMock).toHaveBeenCalledTimes(2);
     });
 

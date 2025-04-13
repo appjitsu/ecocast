@@ -2,8 +2,8 @@ import { config } from 'dotenv';
 import { join } from 'path';
 import { DataSource } from 'typeorm';
 
-// Load environment variables
-config();
+// Load environment variables from the root directory
+config({ path: join(__dirname, '..', '..', '..', '.env') });
 
 export default new DataSource({
   type: 'postgres',

@@ -128,8 +128,7 @@ async function bootstrap() {
         },
         size: 64,
         ignoredMethods: ['GET', 'HEAD', 'OPTIONS'],
-        getTokenFromRequest: (req: Request) =>
-          req.headers['x-csrf-token'] as string,
+        getTokenFromRequest: (req) => req.headers['x-csrf-token'] as string,
       });
 
       // Custom middleware to skip CSRF for certain paths
@@ -145,18 +144,28 @@ async function bootstrap() {
         return doubleCsrfProtection(req, res, next);
       });
 
-      // Add CSRF token generator to app
-      app.use(
-        (
-          req: Request & { csrfToken?: () => string },
-          _res: Response,
-          next: NextFunction,
-        ) => {
-          const token = generateToken(_res, req);
-          req.csrfToken = () => token;
-          next();
-        },
-      );
+      // Apply CSRF token to response headers or body based on your strategy
+      app.use((req: Request, res: Response, next: NextFunction) => {
+        const path = req.originalUrl || req.url;
+        if (
+          path.startsWith('/api/docs') ||
+          path === '/health' ||
+          path.startsWith('/auth/')
+        ) {
+          return next();
+        }
+        if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+          try {
+            // Generate a new token ONLY if the request would normally succeed except for CSRF
+            const token = generateToken(req, res);
+            res.cookie('XSRF-TOKEN', token, { httpOnly: false });
+            // Optionally inform the client about the new token
+          } catch (error) {
+            console.error('Error generating CSRF token:', error);
+          }
+        }
+        next();
+      });
     }
 
     app.useGlobalPipes(new CustomValidationPipe());

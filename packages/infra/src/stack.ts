@@ -166,7 +166,7 @@ export class EcocastStack extends cdk.Stack {
     );
 
     // Add the container to the task definition
-    const container = taskDefinition.addContainer('ApiContainer', {
+    taskDefinition.addContainer('ApiContainer', {
       image: ecs.ContainerImage.fromEcrRepository(ecrRepository, 'latest'), // Placeholder tag, updated by pipeline
       logging: ecs.LogDrivers.awsLogs({ streamPrefix: 'api', logGroup }),
       portMappings: [{ containerPort: 3000 }], // Assuming NestJS runs on 3000

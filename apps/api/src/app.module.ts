@@ -7,11 +7,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
 import { AppController } from './app.controller';
+import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import jwtConfig, { createJwtProvider } from './auth/config/jwt.config';
 import { AuthenticationGuard } from './auth/guards/authentication/authentication.guard';
 import { CastsModule } from './casts/casts.module';
-import { CacheInterceptorModule } from './common/cache/cache.module';
+import { CacheModule as CommonCacheModule } from './common/cache/cache.module';
 import { CompressionMiddleware } from './common/compression/compression.middleware';
 import { HttpCacheInterceptor } from './common/interceptors/cache.interceptor';
 import { LoggingModule } from './common/logging/logging.module';
@@ -40,6 +41,7 @@ const ENV = process.env.NODE_ENV;
 
 @Module({
   providers: [
+    AppService,
     { provide: APP_GUARD, useClass: AuthenticationGuard },
     {
       provide: APP_INTERCEPTOR,
@@ -57,7 +59,7 @@ const ENV = process.env.NODE_ENV;
     HealthModule,
     EventsModule,
     UploadsModule,
-    CacheInterceptorModule,
+    CommonCacheModule,
     LoggingModule,
     PerformanceModule,
     MetricsModule,

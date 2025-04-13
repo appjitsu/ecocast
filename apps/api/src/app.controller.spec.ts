@@ -14,10 +14,10 @@ describe('AppController', () => {
     appController = app.get<AppController>(AppController);
   });
 
-  describe('health', () => {
-    it('should return health status', () => {
-      const health = appController.healthCheck();
-      expect(health).toHaveProperty('status', 'ok');
+  describe('getHello', () => {
+    it('should return a string', () => {
+      const result = appController.getHello();
+      expect(typeof result).toBe('string');
     });
   });
 });
