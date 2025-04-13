@@ -22,10 +22,10 @@ COPY apps/api/package.json apps/api/
 # COPY packages/common/src packages/common/src
 # COPY packages/common/tsconfig.json packages/common/
 
-# Install only production dependencies for the api workspace and its dependencies
+# Install dependencies for the api workspace and its dependencies (including dev for build)
 # This leverages pnpm's filtering capabilities
 # Ignore scripts to prevent husky prepare hooks from running in build
-RUN pnpm install --filter=api... --prod --frozen-lockfile --ignore-scripts
+RUN pnpm install --filter=api... --frozen-lockfile --ignore-scripts
 
 # Copy the rest of the source code for the api and its dependencies
 COPY . .
