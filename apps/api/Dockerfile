@@ -24,7 +24,8 @@ COPY apps/api/package.json apps/api/
 
 # Install only production dependencies for the api workspace and its dependencies
 # This leverages pnpm's filtering capabilities
-RUN pnpm install --filter=api... --prod --frozen-lockfile
+# Ignore scripts to prevent husky prepare hooks from running in build
+RUN pnpm install --filter=api... --prod --frozen-lockfile --ignore-scripts
 
 # Copy the rest of the source code for the api and its dependencies
 COPY . .
