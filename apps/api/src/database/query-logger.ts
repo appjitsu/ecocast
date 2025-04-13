@@ -1,5 +1,4 @@
 import { Logger } from '@nestjs/common';
-import { QueryRunner } from 'typeorm';
 import { LoggerOptions } from 'typeorm/logger/LoggerOptions';
 
 /**
@@ -54,7 +53,6 @@ export class DatabaseQueryLogger {
     time: number,
     query: string,
     parameters?: unknown[],
-    queryRunner?: QueryRunner,
   ): void {
     // Create query metadata
     // const queryData = { // Removed unused variable

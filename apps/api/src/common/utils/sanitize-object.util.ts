@@ -19,7 +19,7 @@ export function sanitizeObject<T extends object>(
   plain: Record<string, unknown>,
   options?: ClassTransformOptions,
 ): T {
-  const instance = plainToInstance(cls, plain as Record<string, any>, {
+  const instance = plainToInstance(cls, plain, {
     excludeExtraneousValues: true,
     ...options,
   });
