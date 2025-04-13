@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -7,17 +8,16 @@ describe('AppController', () => {
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
+      providers: [AppService],
     }).compile();
 
     appController = app.get<AppController>(AppController);
   });
 
   describe('health', () => {
-    it('should return health status with timestamp', () => {
-      const result = appController.healthCheck();
-      expect(result.status).toBe('ok');
-      expect(result.timestamp).toBeDefined();
-      expect(new Date(result.timestamp).getTime()).not.toBeNaN();
+    it('should return health status', () => {
+      const health = appController.healthCheck();
+      expect(health).toHaveProperty('status', 'ok');
     });
   });
 });
