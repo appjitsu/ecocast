@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+# Prevent concurrent deployments on the same branch
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
 # Add permissions for OIDC
 permissions:
   id-token: write # Required for requesting the JWT
@@ -236,9 +241,35 @@ jobs:
 
       - name: Deploy static site to S3
         run: |
-          aws s3 sync ./apps/web/out s3://${{ secrets.FRONTEND_S3_BUCKET_NAME }} --delete --region ${{ secrets.AWS_REGION }}
+          echo "Starting S3 sync..."
+          aws s3 sync ./apps/web/out s3://${{ secrets.FRONTEND_S3_BUCKET_NAME }} --delete --exact-timestamps --region ${{ secrets.AWS_REGION }}
+          if [ $? -ne 0 ]; then
+            echo "::error::S3 sync failed."
+            exit 1
+          fi
+          echo "Verifying S3 sync (checking for index.html)..."
+          aws s3 ls s3://${{ secrets.FRONTEND_S3_BUCKET_NAME }}/index.html --region ${{ secrets.AWS_REGION }}
+          if [ $? -ne 0 ]; then
+            echo "::error::index.html not found in S3 bucket after sync."
+            exit 1
+          fi
+          echo "S3 sync completed successfully."
         # Assumes the build output is in apps/web/out
 
       - name: Invalidate CloudFront cache
         run: |
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.FRONTEND_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*" --region ${{ secrets.AWS_REGION }}
+          echo "Creating CloudFront invalidation..."
+          INVALIDATION_ID=$(aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.FRONTEND_CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/index.html" "/_next/*" \
+            --query 'Invalidation.Id' --output text --region ${{ secrets.AWS_REGION }})
+
+          if [ -z "$INVALIDATION_ID" ]; then
+            echo "::error::Failed to create CloudFront invalidation."
+            exit 1
+          fi
+          echo "Waiting for invalidation $INVALIDATION_ID to complete..."
+          aws cloudfront wait invalidation-completed \
+            --distribution-id ${{ secrets.FRONTEND_CLOUDFRONT_DISTRIBUTION_ID }} \
+            --id $INVALIDATION_ID --region ${{ secrets.AWS_REGION }}
+          echo "CloudFront invalidation completed."

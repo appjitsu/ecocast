@@ -7,33 +7,23 @@ WORKDIR /usr/src/app
 # Install pnpm globally
 RUN npm install -g pnpm@8.15.4
 
-# Install turbo globally to ensure availability during build
-RUN npm install -g turbo
+# Install turbo globally (optional fallback, pnpm install should handle it)
+# RUN npm install -g turbo
 
-# Copy root package.json and pnpm workspace files
+# Copy root configuration files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-
-# Copy turbo.json
 COPY turbo.json ./
 
-# Copy necessary package sources for building the API
-COPY apps/api/package.json apps/api/
-# Uncomment and adjust if api depends on shared packages
-# COPY packages/common/package.json packages/common/
-# COPY packages/common/src packages/common/src
-# COPY packages/common/tsconfig.json packages/common/
-
-# Install dependencies for the api workspace and its dependencies, PLUS root dev deps
-# This leverages pnpm's filtering capabilities
-# Ignore scripts to prevent husky prepare hooks from running in build
-RUN pnpm install --filter={./,api...} --frozen-lockfile --ignore-scripts
-
-# Copy only necessary source code
+# Copy ALL source code needed for the build first
 COPY apps/api apps/api/
 # If api depends on other workspace packages (e.g., packages/common), copy their source too:
 # COPY packages/common packages/common/
 
-# Build the specific api application using Turbo (use pnpm exec)
+# Install dependencies for the root, api workspace, and its dependencies
+# Filter should now correctly find the packages because source code is present
+RUN pnpm install --filter={./,api...} --frozen-lockfile --ignore-scripts
+
+# Build the specific api application using Turbo
 RUN pnpm exec turbo run build --filter=api...
 
 # Prune development dependencies after build
