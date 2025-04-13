@@ -16,17 +16,16 @@ COPY turbo.json ./
 
 # Copy ALL source code needed for the build first
 COPY apps/api apps/api/
-# If api depends on other workspace packages (e.g., packages/common), copy their source too:
-# COPY packages/common packages/common/
+# Copy necessary shared packages if they exist and are dependencies
+COPY packages packages/
 
-# Install dependencies for the root, api workspace, and its dependencies
-# Filter should now correctly find the packages because source code is present
-RUN pnpm install --filter={./,api...} --frozen-lockfile --ignore-scripts
+# Install ALL workspace dependencies (including dev deps like turbo)
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Build the specific api application using Turbo
 RUN pnpm exec turbo run build --filter=api...
 
-# Prune development dependencies after build
+# Prune development dependencies AFTER build for the specific package needed
 RUN pnpm prune --prod --filter=api...
 
 # Stage 2: Production image
