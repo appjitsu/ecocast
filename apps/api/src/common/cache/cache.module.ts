@@ -12,7 +12,7 @@ import { CacheInvalidationService } from './cache-invalidation.service';
     ConfigModule.forFeature(cacheConfig),
     NestCacheModule.registerAsync({
       imports: [ConfigModule.forFeature(cacheConfig)],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         ttl: configService.get<number>('cache.ttl'),
         max: configService.get<number>('cache.max'),
       }),

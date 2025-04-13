@@ -45,7 +45,7 @@ export class CacheInvalidationService {
    * Invalidate all cache entries with a specific tag
    * @param tag Tag to invalidate
    */
-  async invalidateByTag(tag: string): Promise<void> {
+  invalidateByTag(tag: string): void {
     this.logger.warn(
       `Attempting tag-based invalidation for [${tag}]. Full pattern matching may not be supported by the current cache store.`,
     );
@@ -61,7 +61,7 @@ export class CacheInvalidationService {
    */
   async invalidateByTags(tags: string[]): Promise<void> {
     for (const tag of tags) {
-      await this.invalidateByTag(tag);
+      this.invalidateByTag(tag);
     }
   }
 
@@ -69,7 +69,7 @@ export class CacheInvalidationService {
    * Invalidate cache entries by user ID
    * @param userId User ID
    */
-  async invalidateByUserId(userId: string): Promise<void> {
+  invalidateByUserId(userId: string): void {
     this.logger.warn(
       `Attempting user ID-based invalidation for [${userId}]. Full pattern matching may not be supported by the current cache store.`,
     );
@@ -83,7 +83,7 @@ export class CacheInvalidationService {
   async invalidateByPath(path: string): Promise<void> {
     try {
       this.logger.log(`Invalidating cache entry for exact path: ${path}`);
-      await this.cacheManager.del(path); // Await direct deletion by key
+      await this.cacheManager.del(path);
     } catch (error) {
       this.logger.error(`Failed to invalidate cache for path: ${path}`, error);
     }

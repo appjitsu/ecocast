@@ -39,10 +39,12 @@ export class DatabaseQueryLogger {
    * Log a query with its execution time
    */
   public logQuery(query: string, parameters?: unknown[]): void {
-    // Skip logging if disabled
     if (!this.logAllQueries) return;
 
-    this.logger.debug(`Query: ${this.formatQuery(query, parameters)}`);
+    const queryLog =
+      `Query: ${query}` +
+      (parameters ? ` -- Parameters: ${JSON.stringify(parameters)}` : '');
+    this.logger.debug(queryLog);
   }
 
   /**
@@ -75,28 +77,14 @@ export class DatabaseQueryLogger {
     error: string | Error,
     query: string,
     parameters?: unknown[],
-    queryRunner?: QueryRunner,
   ): void {
-    // Create error metadata
-    const errorData = {
-      query: this.logQueriesOnError
-        ? this.formatQuery(query, parameters)
-        : 'QUERY HIDDEN',
-      error: error instanceof Error ? error.message : error,
-      stack: error instanceof Error ? error.stack : undefined,
-      parameters: this.logQueriesOnError ? parameters : 'PARAMETERS HIDDEN',
-      connection: queryRunner?.connection?.name || 'default',
-    };
-
-    // Log the error
-    this.logger.error(
-      `Query error: ${error instanceof Error ? error.message : error}`,
-      error instanceof Error ? error.stack : undefined,
-    );
-
-    // Log the query if enabled
-    if (this.logQueriesOnError) {
-      this.logger.error(`Failed query: ${this.formatQuery(query, parameters)}`);
+    const errorLog =
+      `Query Failed: ${query}` +
+      (parameters ? ` -- Parameters: ${JSON.stringify(parameters)}` : '');
+    if (error instanceof Error) {
+      this.logger.error(errorLog, error.stack);
+    } else {
+      this.logger.error(errorLog, error);
     }
   }
 

@@ -1,44 +1,58 @@
-import { ArgumentMetadata } from '@nestjs/common';
-import { plainToInstance } from 'class-transformer';
-import 'reflect-metadata';
-import { SanitizationPipe } from '../pipes/sanitization.pipe';
+import { Logger } from '@nestjs/common';
+import { ClassTransformOptions, plainToInstance } from 'class-transformer';
+import { validateSync } from 'class-validator';
+import * as DOMPurify from 'isomorphic-dompurify';
+import 'reflect-metadata'; // Ensure reflect-metadata is imported if used implicitly by class-transformer/validator
 
-// Initialize sanitization pipe
-const sanitizationPipe = new SanitizationPipe();
+const logger = new Logger('SanitizeObjectUtil');
 
 /**
- * Utility function to sanitize an object based on its class decorators
- * @param obj The object to sanitize
- * @param type The class type of the object
- * @returns Sanitized object
+ * Converts plain object to class instance, validates, and sanitizes string properties.
+ * @param cls The class constructor.
+ * @param plain The plain object to convert.
+ * @param options Class-transformer options.
+ * @returns The sanitized and validated class instance.
+ * @throws Error if validation fails.
  */
 export function sanitizeObject<T extends object>(
-  obj: T,
-  type: new (...args: unknown[]) => T,
+  cls: { new (...args: any[]): T },
+  plain: Record<string, any>,
+  options?: ClassTransformOptions,
 ): T {
-  // Convert plain object to class instance to get metadata
-  const instance = plainToInstance(type, obj);
+  const instance = plainToInstance(cls, plain, {
+    excludeExtraneousValues: true,
+    ...options,
+  });
 
-  // Create metadata mock for the sanitization pipe
-  const metadata: ArgumentMetadata = {
-    type: 'body',
-    metatype: type,
-    data: '',
-  };
+  const errors = validateSync(instance, {
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    skipMissingProperties: false,
+    forbidUnknownValues: true,
+  });
 
-  // Transform the object using the sanitization pipe
-  return sanitizationPipe.transform(instance) as T;
+  if (errors.length > 0) {
+    // Unused metadata retrieval removed
+    logger.error(
+      `Validation failed for class ${cls.name}: ${JSON.stringify(errors)}`,
+    );
+    throw new Error(
+      `Validation failed: ${errors.map((e) => e.toString()).join(', ')}`,
+    );
+  }
+
+  // Sanitize string properties
+  // Using a type assertion as instance[key] could be any type
+  for (const key in instance) {
+    if (Object.prototype.hasOwnProperty.call(instance, key)) {
+      const value = (instance as Record<string, any>)[key];
+      if (typeof value === 'string') {
+        (instance as Record<string, any>)[key] = DOMPurify.sanitize(value);
+      }
+    }
+  }
+
+  return instance;
 }
 
-/**
- * Utility function to sanitize a collection of objects
- * @param objects Array of objects to sanitize
- * @param type The class type of the objects
- * @returns Sanitized array of objects
- */
-export function sanitizeCollection<T extends object>(
-  objects: T[],
-  type: new (...args: unknown[]) => T,
-): T[] {
-  return objects.map((obj) => sanitizeObject(obj, type));
-}
+// Remove any duplicate or older implementations if they existed.

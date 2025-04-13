@@ -7,25 +7,15 @@ import { LoggerModule as PinoLoggerModule } from 'nestjs-pino';
     PinoLoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const isProduction = process.env.NODE_ENV === 'production';
-
-        return {
-          pinoHttp: {
-            level: isProduction ? 'info' : 'debug',
-            transport: isProduction ? undefined : { target: 'pino-pretty' },
-            redact: {
-              paths: [
-                'req.headers.authorization',
-                'req.headers.cookie',
-                'req.body.password',
-                'req.body.confirmPassword',
-              ],
-              censor: '***REDACTED***',
-            },
-          },
-        };
-      },
+      useFactory: (configService: ConfigService) => ({
+        pinoHttp: {
+          level: configService.get<string>('LOG_LEVEL', 'info'),
+          transport:
+            process.env.NODE_ENV !== 'production'
+              ? { target: 'pino-pretty' }
+              : undefined,
+        },
+      }),
     }),
   ],
   providers: [],
