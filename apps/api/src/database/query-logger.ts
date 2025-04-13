@@ -57,16 +57,18 @@ export class DatabaseQueryLogger {
     queryRunner?: QueryRunner,
   ): void {
     // Create query metadata
-    const queryData = {
-      query: this.formatQuery(query, parameters),
-      time,
-      connection: queryRunner?.connection?.name || 'default',
-      threshold: this.slowQueryThreshold,
-    };
+    // const queryData = { // Removed unused variable
+    //   query: this.formatQuery(query, parameters),
+    //   time,
+    //   connection: queryRunner?.connection?.name || 'default',
+    //   threshold: this.slowQueryThreshold,
+    // };
 
     // Log warning for slow query
     this.logger.warn(
-      `Slow query detected (${time}ms): ${this.formatQuery(query, parameters)}`,
+      `Slow query detected (${time}ms Threshold: ${this.slowQueryThreshold}ms): ${this.formatQuery(query, parameters)}`,
+      // Optionally pass context/metadata if logger supports it
+      // queryData
     );
   }
 

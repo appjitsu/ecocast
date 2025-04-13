@@ -59,7 +59,7 @@ export class CacheInvalidationService {
    * Invalidate all cache entries matching multiple tags
    * @param tags Tags to invalidate
    */
-  async invalidateByTags(tags: string[]): Promise<void> {
+  invalidateByTags(tags: string[]): void {
     for (const tag of tags) {
       this.invalidateByTag(tag);
     }

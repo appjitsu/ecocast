@@ -15,11 +15,11 @@ const logger = new Logger('SanitizeObjectUtil');
  * @throws Error if validation fails.
  */
 export function sanitizeObject<T extends object>(
-  cls: { new (...args: any[]): T },
-  plain: Record<string, any>,
+  cls: { new (...args: unknown[]): T },
+  plain: Record<string, unknown>,
   options?: ClassTransformOptions,
 ): T {
-  const instance = plainToInstance(cls, plain, {
+  const instance = plainToInstance(cls, plain as Record<string, any>, {
     excludeExtraneousValues: true,
     ...options,
   });
@@ -45,9 +45,9 @@ export function sanitizeObject<T extends object>(
   // Using a type assertion as instance[key] could be any type
   for (const key in instance) {
     if (Object.prototype.hasOwnProperty.call(instance, key)) {
-      const value = (instance as Record<string, any>)[key];
+      const value = (instance as Record<string, unknown>)[key];
       if (typeof value === 'string') {
-        (instance as Record<string, any>)[key] = DOMPurify.sanitize(value);
+        (instance as Record<string, unknown>)[key] = DOMPurify.sanitize(value);
       }
     }
   }
