@@ -40,7 +40,7 @@
     },
     "lint": {
       "dependsOn": ["^lint"],
-      "outputs": ["eslint-results.json"]
+      "outputs": []
     },
     "check-types": {
       "dependsOn": ["^check-types"],
