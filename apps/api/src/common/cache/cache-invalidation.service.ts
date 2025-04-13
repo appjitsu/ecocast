@@ -46,14 +46,13 @@ export class CacheInvalidationService {
    * @param tag Tag to invalidate
    */
   async invalidateByTag(tag: string): Promise<void> {
-    try {
-      // In-memory cache doesn't support pattern matching
-      this.logger.warn(
-        'Tag-based invalidation is not fully supported with Redis cache',
-      );
-    } catch (error) {
-      this.logger.error(`Failed to invalidate cache by tag: ${tag}`, error);
-    }
+    this.logger.warn(
+      `Attempting tag-based invalidation for [${tag}]. Full pattern matching may not be supported by the current cache store.`,
+    );
+    // If using a store like Redis, you might access underlying client methods here, e.g.:
+    // const redisClient = (this.cacheManager.store as any).getClient();
+    // const keys = await redisClient.keys(`${tag}:*`);
+    // for (const key of keys) { await this.cacheManager.del(key); }
   }
 
   /**
@@ -70,19 +69,11 @@ export class CacheInvalidationService {
    * Invalidate cache entries by user ID
    * @param userId User ID
    */
-  async invalidateByUserId(userId: string | number): Promise<void> {
-    try {
-      // In-memory cache doesn't support pattern matching
-      this.logger.warn(
-        'User-based invalidation is only fully supported with Redis cache',
-      );
-      this.logger.debug(`Invalidated cache entries for user: ${userId}`);
-    } catch (error) {
-      this.logger.error(
-        `Failed to invalidate cache for user: ${userId}`,
-        error,
-      );
-    }
+  async invalidateByUserId(userId: string): Promise<void> {
+    this.logger.warn(
+      `Attempting user ID-based invalidation for [${userId}]. Full pattern matching may not be supported by the current cache store.`,
+    );
+    // Similar pattern to invalidateByTag if using a store that supports key patterns.
   }
 
   /**
@@ -91,11 +82,8 @@ export class CacheInvalidationService {
    */
   async invalidateByPath(path: string): Promise<void> {
     try {
-      // In-memory cache doesn't support pattern matching
-      this.logger.warn(
-        'Path-based invalidation is only fully supported with Redis cache',
-      );
-      this.logger.debug(`Invalidated cache entries for path: ${path}`);
+      this.logger.log(`Invalidating cache entry for exact path: ${path}`);
+      await this.cacheManager.del(path); // Await direct deletion by key
     } catch (error) {
       this.logger.error(`Failed to invalidate cache for path: ${path}`, error);
     }
@@ -104,16 +92,12 @@ export class CacheInvalidationService {
   /**
    * Clear the entire cache
    */
-  async clearAll(): Promise<void> {
+  async invalidateAll(): Promise<void> {
     try {
-      if (this.cacheManager.reset) {
-        await this.cacheManager.reset();
-        this.logger.debug('Cleared all cache entries');
-      } else {
-        this.logger.warn('Cache manager does not support the reset method');
-      }
+      this.logger.log('Invalidating all cache entries');
+      await this.cacheManager.reset();
     } catch (error) {
-      this.logger.error('Failed to clear cache', error);
+      this.logger.error('Failed to reset cache', error);
     }
   }
 }
