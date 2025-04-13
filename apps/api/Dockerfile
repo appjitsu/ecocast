@@ -4,8 +4,11 @@ FROM node:18-alpine AS builder
 # Set working directory
 WORKDIR /usr/src/app
 
-# Install pnpm
+# Install pnpm globally
 RUN npm install -g pnpm@8.15.4
+
+# Install turbo globally to ensure availability during build
+RUN npm install -g turbo
 
 # Copy root package.json and pnpm workspace files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
@@ -14,23 +17,23 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY turbo.json ./
 
 # Copy necessary package sources for building the API
-# Copy api package.json
 COPY apps/api/package.json apps/api/
-# Copy shared packages source (adjust if you have dependencies in other packages/*)
-# Example: If api depends on packages/common
+# Uncomment and adjust if api depends on shared packages
 # COPY packages/common/package.json packages/common/
 # COPY packages/common/src packages/common/src
 # COPY packages/common/tsconfig.json packages/common/
 
-# Install dependencies for the api workspace and its dependencies (including dev for build)
+# Install dependencies for the api workspace and its dependencies, PLUS root dev deps
 # This leverages pnpm's filtering capabilities
 # Ignore scripts to prevent husky prepare hooks from running in build
-RUN pnpm install --filter=api... --frozen-lockfile --ignore-scripts
+RUN pnpm install --filter={./,api...} --frozen-lockfile --ignore-scripts
 
-# Copy the rest of the source code for the api and its dependencies
-COPY . .
+# Copy only necessary source code
+COPY apps/api apps/api/
+# If api depends on other workspace packages (e.g., packages/common), copy their source too:
+# COPY packages/common packages/common/
 
-# Build the specific api application using Turbo
+# Build the specific api application using Turbo (use pnpm exec)
 RUN pnpm exec turbo run build --filter=api...
 
 # Prune development dependencies after build
@@ -41,12 +44,24 @@ FROM node:18-alpine
 
 WORKDIR /usr/src/app
 
-# Copy production node_modules and build output from the builder stage
-COPY --from=builder /usr/src/app/node_modules ./node_modules
+# Install pnpm in production stage to support migrations
+RUN npm install -g pnpm@8.15.4
+
+# Copy necessary node_modules (adjust if shared packages are used)
+COPY --from=builder /usr/src/app/apps/api/node_modules ./apps/api/node_modules
+# COPY --from=builder /usr/src/app/packages/common/node_modules ./packages/common/node_modules # Example for shared package
+
+# Copy build artifacts
 COPY --from=builder /usr/src/app/apps/api/dist ./apps/api/dist
+# COPY --from=builder /usr/src/app/packages/common/dist ./packages/common/dist # Example for shared package
+
+# Copy necessary package.json files
 COPY --from=builder /usr/src/app/apps/api/package.json ./apps/api/
-# Copy root package.json if needed by the runtime (e.g., for scripts)
-# COPY --from=builder /usr/src/app/package.json ./
+# COPY --from=builder /usr/src/app/packages/common/package.json ./packages/common/ # Example for shared package
+
+# Copy root package files needed for pnpm run in production image
+COPY --from=builder /usr/src/app/package.json ./
+COPY --from=builder /usr/src/app/pnpm-lock.yaml ./
 
 # Expose the port the app runs on
 EXPOSE 3000

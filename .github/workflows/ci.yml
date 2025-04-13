@@ -126,22 +126,18 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          # Note: ECR_REPOSITORY_URI might contain the registry name already.
-          # This script assumes it's just the repo name (e.g., my-repo) or path (e.g., my-namespace/my-repo)
-          # Adjust REPO_NAME extraction if your secret contains the full URI (registry/repo)
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI }}
+          ECR_REPOSITORY: ecocast-api # Use the actual repository name directly
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # Example: Extract repo name if URI is like 123456789012.dkr.ecr.region.amazonaws.com/my-repo
-          # REPO_NAME=$(echo $ECR_REPOSITORY | cut -d'/' -f2-)
-          # If ECR_REPOSITORY_URI secret *is* just the name, use it directly:
-          REPO_NAME=$ECR_REPOSITORY
-          IMAGE_URI=$ECR_REGISTRY/$REPO_NAME:$IMAGE_TAG
-          echo "Building image $IMAGE_URI..."
-          docker build -t $IMAGE_URI -f apps/api/Dockerfile .
-          echo "Pushing image $IMAGE_URI..."
-          docker push $IMAGE_URI
-          echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
+          IMAGE_URI_SHA=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          IMAGE_URI_LATEST=$ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "Building image $IMAGE_URI_SHA and $IMAGE_URI_LATEST..."
+          docker build -t $IMAGE_URI_SHA -t $IMAGE_URI_LATEST -f apps/api/Dockerfile .
+          echo "Pushing image $IMAGE_URI_SHA..."
+          docker push $IMAGE_URI_SHA
+          echo "Pushing image $IMAGE_URI_LATEST..."
+          docker push $IMAGE_URI_LATEST
+          echo "image=$IMAGE_URI_SHA" >> $GITHUB_OUTPUT # Output the SHA-tagged image URI
 
       - name: Run Database Migrations
         id: run-migration
@@ -150,8 +146,8 @@ jobs:
           MIGRATION_TASK_DEF_ARN: ${{ secrets.ECS_MIGRATION_TASK_DEFINITION_ARN }}
           SUBNETS: ${{ secrets.PRIVATE_SUBNET_IDS }}
           SECURITY_GROUPS: ${{ secrets.ECS_SECURITY_GROUP_ID }}
-          CONTAINER_NAME: ApiContainer # Must match container name in CDK
-          IMAGE_URI: ${{ steps.build-image.outputs.image }}
+          CONTAINER_NAME: ApiContainer
+          IMAGE_URI: ${{ steps.build-image.outputs.image }} # Use the SHA-tagged image for migrations
         run: |
           echo "Starting migration task..."
           TASK_ARN=$(aws ecs run-task \
@@ -160,7 +156,7 @@ jobs:
             --launch-type FARGATE \
             --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECURITY_GROUPS],assignPublicIp=DISABLED}" \
             --overrides '{ "containerOverrides": [{ "name": "'$CONTAINER_NAME'", "image": "'$IMAGE_URI'" }] }' \
-            --query 'tasks[0].taskArn' --output text)
+            --query 'tasks[0].taskArn' --output text --region ${{ secrets.AWS_REGION }})
 
           if [ -z "$TASK_ARN" ]; then
             echo "::error::Failed to start migration task."
@@ -170,19 +166,15 @@ jobs:
           echo "task_arn=$TASK_ARN" >> $GITHUB_OUTPUT
 
           echo "Waiting for migration task ($TASK_ARN) to complete..."
-          aws ecs wait tasks-stopped --cluster $CLUSTER_NAME --tasks $TASK_ARN
+          aws ecs wait tasks-stopped --cluster $CLUSTER_NAME --tasks $TASK_ARN --region ${{ secrets.AWS_REGION }}
 
           echo "Checking migration task status..."
-          # Check the exit code of the container
-          EXIT_CODE=$(aws ecs describe-tasks --cluster $CLUSTER_NAME --tasks $TASK_ARN --query 'tasks[0].containers[?name==`'$CONTAINER_NAME'`].exitCode | [0]' --output text)
+          EXIT_CODE=$(aws ecs describe-tasks --cluster $CLUSTER_NAME --tasks $TASK_ARN --query 'tasks[0].containers[?name==`'$CONTAINER_NAME'`].exitCode | [0]' --output text --region ${{ secrets.AWS_REGION }})
 
           echo "Migration task exit code: $EXIT_CODE"
 
           if [ "$EXIT_CODE" != "0" ]; then
             echo "::error::Migration task failed with exit code $EXIT_CODE. Check ECS task logs for details (Log Group: /ecs/ecocast-api, Stream Prefix: migration)."
-            # Optional: Fetch and print last part of logs
-            # LOG_STREAM_NAME=$(aws ecs describe-tasks --cluster $CLUSTER_NAME --tasks $TASK_ARN --query 'tasks[0].containers[?name==`'$CONTAINER_NAME'`].logConfiguration.options."awslogs-stream-prefix" | [0]' --output text)
-            # aws logs get-log-events --log-group-name /ecs/ecocast-api --log-stream-name "$LOG_STREAM_NAME/[$CONTAINER_NAME]/$TASK_ARN" --limit 100
             exit 1
           else
             echo "Migration task completed successfully."
@@ -194,7 +186,7 @@ jobs:
         with:
           task-definition: ${{ secrets.ECS_TASK_DEFINITION_ARN }} # API task definition
           container-name: ApiContainer
-          image: ${{ steps.build-image.outputs.image }}
+          image: ${{ steps.build-image.outputs.image }} # Use the SHA-tagged image
 
       - name: Deploy Amazon ECS task definition (for API service)
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
@@ -244,9 +236,9 @@ jobs:
 
       - name: Deploy static site to S3
         run: |
-          aws s3 sync ./apps/web/out s3://${{ secrets.FRONTEND_S3_BUCKET_NAME }} --delete
+          aws s3 sync ./apps/web/out s3://${{ secrets.FRONTEND_S3_BUCKET_NAME }} --delete --region ${{ secrets.AWS_REGION }}
         # Assumes the build output is in apps/web/out
 
       - name: Invalidate CloudFront cache
         run: |
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.FRONTEND_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.FRONTEND_CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*" --region ${{ secrets.AWS_REGION }}
