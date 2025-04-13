@@ -144,46 +144,47 @@ jobs:
           docker push $IMAGE_URI_LATEST
           echo "image=$IMAGE_URI_SHA" >> $GITHUB_OUTPUT # Output the SHA-tagged image URI
 
-      - name: Run Database Migrations
-        id: run-migration
-        env:
-          CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
-          MIGRATION_TASK_DEF_ARN: ${{ secrets.ECS_MIGRATION_TASK_DEFINITION_ARN }}
-          SUBNETS: ${{ secrets.PRIVATE_SUBNET_IDS }}
-          SECURITY_GROUPS: ${{ secrets.ECS_SECURITY_GROUP_ID }}
-          CONTAINER_NAME: ApiContainer
-          IMAGE_URI: ${{ steps.build-image.outputs.image }} # Use the SHA-tagged image for migrations
-        run: |
-          echo "Starting migration task..."
-          TASK_ARN=$(aws ecs run-task \
-            --cluster $CLUSTER_NAME \
-            --task-definition $MIGRATION_TASK_DEF_ARN \
-            --launch-type FARGATE \
-            --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECURITY_GROUPS],assignPublicIp=DISABLED}" \
-            --overrides '{ "containerOverrides": [{ "name": "'$CONTAINER_NAME'", "image": "'$IMAGE_URI'" }] }' \
-            --query 'tasks[0].taskArn' --output text --region ${{ secrets.AWS_REGION }})
-
-          if [ -z "$TASK_ARN" ]; then
-            echo "::error::Failed to start migration task."
-            exit 1
-          fi
-          echo "Migration task started: $TASK_ARN"
-          echo "task_arn=$TASK_ARN" >> $GITHUB_OUTPUT
-
-          echo "Waiting for migration task ($TASK_ARN) to complete..."
-          aws ecs wait tasks-stopped --cluster $CLUSTER_NAME --tasks $TASK_ARN --region ${{ secrets.AWS_REGION }}
-
-          echo "Checking migration task status..."
-          EXIT_CODE=$(aws ecs describe-tasks --cluster $CLUSTER_NAME --tasks $TASK_ARN --query 'tasks[0].containers[?name==`'$CONTAINER_NAME'`].exitCode | [0]' --output text --region ${{ secrets.AWS_REGION }})
-
-          echo "Migration task exit code: $EXIT_CODE"
-
-          if [ "$EXIT_CODE" != "0" ]; then
-            echo "::error::Migration task failed with exit code $EXIT_CODE. Check ECS task logs for details (Log Group: /ecs/ecocast-api, Stream Prefix: migration)."
-            exit 1
-          else
-            echo "Migration task completed successfully."
-          fi
+      # === Temporarily comment out migration step ===
+      # - name: Run Database Migrations
+      #   id: run-migration
+      #   env:
+      #     CLUSTER_NAME: ${{ secrets.ECS_CLUSTER_NAME }}
+      #     MIGRATION_TASK_DEF_ARN: ${{ secrets.ECS_MIGRATION_TASK_DEFINITION_ARN }}
+      #     SUBNETS: ${{ secrets.PRIVATE_SUBNET_IDS }}
+      #     SECURITY_GROUPS: ${{ secrets.ECS_SECURITY_GROUP_ID }}
+      #     CONTAINER_NAME: ApiContainer
+      #     IMAGE_URI: ${{ steps.build-image.outputs.image }} # Use the SHA-tagged image for migrations
+      #   run: |
+      #     echo "Starting migration task..."
+      #     TASK_ARN=$(aws ecs run-task \
+      #       --cluster $CLUSTER_NAME \
+      #       --task-definition $MIGRATION_TASK_DEF_ARN \
+      #       --launch-type FARGATE \
+      #       --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SECURITY_GROUPS],assignPublicIp=DISABLED}" \
+      #       --overrides '{ "containerOverrides": [{ "name": "'$CONTAINER_NAME'", "image": "'$IMAGE_URI'" }] }' \
+      #       --query 'tasks[0].taskArn' --output text --region ${{ secrets.AWS_REGION }})
+      #
+      #     if [ -z "$TASK_ARN" ]; then
+      #       echo "::error::Failed to start migration task."
+      #       exit 1
+      #     fi
+      #     echo "Migration task started: $TASK_ARN"
+      #     echo "task_arn=$TASK_ARN" >> $GITHUB_OUTPUT
+      #
+      #     echo "Waiting for migration task ($TASK_ARN) to complete..."
+      #     aws ecs wait tasks-stopped --cluster $CLUSTER_NAME --tasks $TASK_ARN --region ${{ secrets.AWS_REGION }}
+      #
+      #     echo "Checking migration task status..."
+      #     EXIT_CODE=$(aws ecs describe-tasks --cluster $CLUSTER_NAME --tasks $TASK_ARN --query 'tasks[0].containers[?name==`'$CONTAINER_NAME'`].exitCode | [0]' --output text --region ${{ secrets.AWS_REGION }})
+      #
+      #     echo "Migration task exit code: $EXIT_CODE"
+      #
+      #     if [ "$EXIT_CODE" != "0" ]; then
+      #       echo "::error::Migration task failed with exit code $EXIT_CODE. Check ECS task logs for details (Log Group: /ecs/ecocast-api, Stream Prefix: migration)."
+      #       exit 1
+      #     else
+      #       echo "Migration task completed successfully."
+      #     fi
 
       - name: Render Amazon ECS task definition (for API service)
         id: render-api-task-def

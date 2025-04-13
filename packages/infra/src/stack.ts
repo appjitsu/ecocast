@@ -1,15 +1,10 @@
 import * as cdk from 'aws-cdk-lib';
-import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
-import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecr from 'aws-cdk-lib/aws-ecr';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
-import * as rds from 'aws-cdk-lib/aws-rds';
-import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 
 export class EcocastStack extends cdk.Stack {
@@ -52,6 +47,7 @@ export class EcocastStack extends cdk.Stack {
     });
 
     // === RDS PostgreSQL Database ===
+    /* // --- Start DB Comment Out ---
     // Create a Security Group for the RDS instance
     const dbSecurityGroup = new ec2.SecurityGroup(this, 'DbSecurityGroup', {
       vpc,
@@ -110,6 +106,7 @@ export class EcocastStack extends cdk.Stack {
       deletionProtection: false, // Set to true for production
       removalPolicy: cdk.RemovalPolicy.DESTROY, // DESTROY for dev, RETAIN or SNAPSHOT for production
     });
+    */ // --- End DB Comment Out ---
 
     // === ECR Repository ===
     const ecrRepository = new ecr.Repository(this, 'ApiRepository', {
@@ -136,14 +133,15 @@ export class EcocastStack extends cdk.Stack {
 
     const taskRole = new iam.Role(this, 'TaskRole', {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
-      description:
-        'Role for ECS tasks to access other AWS services (like Secrets Manager)',
+      description: 'Role for ECS tasks to access other AWS services',
     });
 
+    /* // --- Start DB Permissions Comment Out ---
     // Grant task role permission to read the DB secret
     dbCredentialsSecret.grantRead(taskRole);
     // Grant task role permission to read the JWT secret
     jwtSecret.grantRead(taskRole);
+    */ // --- End DB Permissions Comment Out ---
 
     const logGroup = new logs.LogGroup(this, 'ApiLogGroup', {
       logGroupName: '/ecs/ecocast-api',
@@ -172,11 +170,14 @@ export class EcocastStack extends cdk.Stack {
       portMappings: [{ containerPort: 3000 }], // Assuming NestJS runs on 3000
       environment: {
         NODE_ENV: 'production',
+        /* // --- Start DB Env Comment Out ---
         // Pass DB connection details that are not secret
         DB_HOST: dbInstance.dbInstanceEndpointAddress,
         DB_PORT: dbInstance.dbInstanceEndpointPort,
-        DB_NAME: 'ecocast_db', // The name we specified for the RDS instance
+        DB_NAME: 'ecocast_db',
+        */ // --- End DB Env Comment Out ---
       },
+      /* // --- Start DB Secrets Comment Out ---
       secrets: {
         // Inject secret portions of the DB connection
         DB_USERNAME: ecs.Secret.fromSecretsManager(
@@ -190,6 +191,7 @@ export class EcocastStack extends cdk.Stack {
         // Inject JWT Secret
         JWT_SECRET: ecs.Secret.fromSecretsManager(jwtSecret, 'JWT_SECRET'),
       },
+      */ // --- End DB Secrets Comment Out ---
     });
 
     // Security Group for the ECS Service/ALB
@@ -209,12 +211,14 @@ export class EcocastStack extends cdk.Stack {
     );
     // TODO: Consider adding HTTPS later with ACM Certificate
 
+    /* // --- Start DB SG Rule Comment Out ---
     // Allow connection from the Service SG to the DB SG
     dbSecurityGroup.addIngressRule(
       serviceSecurityGroup,
       ec2.Port.tcp(5432),
       'Allow PostgreSQL access from ECS Service',
     );
+    */ // --- End DB SG Rule Comment Out ---
 
     // Application Load Balancer
     const alb = new elbv2.ApplicationLoadBalancer(this, 'ApiAlb', {
@@ -260,6 +264,7 @@ export class EcocastStack extends cdk.Stack {
     });
 
     // === S3 Bucket for Frontend ===
+    /* // --- Start Frontend Comment Out ---
     const frontendBucket = new s3.Bucket(this, 'FrontendBucket', {
       bucketName: `ecocast-frontend-${this.account}-${this.region}`,
       publicReadAccess: false, // Access controlled by CloudFront OAI/OAC
@@ -313,6 +318,7 @@ export class EcocastStack extends cdk.Stack {
         priceClass: cloudfront.PriceClass.PRICE_CLASS_100, // Use cheapest price class
       },
     );
+    */ // --- End Frontend Comment Out ---
 
     // === IAM Role for GitHub Actions (OIDC) ===
     // !! Replace with your GitHub organization and repository name !!
@@ -394,6 +400,7 @@ export class EcocastStack extends cdk.Stack {
             //     StringEquals: { 'iam:PassedToService': 'ecs-tasks.amazonaws.com' }
             // }
           }),
+          /* // --- Start Frontend Permissions Comment Out ---
           // S3 Permissions for Frontend Deployment
           new iam.PolicyStatement({
             actions: [
@@ -404,22 +411,24 @@ export class EcocastStack extends cdk.Stack {
               's3:GetBucketLocation',
             ],
             resources: [
-              frontendBucket.bucketArn,
-              `${frontendBucket.bucketArn}/*`, // Grant access to objects within the bucket
+              frontendBucket.bucketArn, // This line will cause an error if uncommented while bucket is commented out
+              `${frontendBucket.bucketArn}/*`, // This line will cause an error if uncommented while bucket is commented out
             ],
           }),
           // CloudFront Invalidation Permissions
           new iam.PolicyStatement({
             actions: ['cloudfront:CreateInvalidation'],
             resources: [
-              `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`,
+              `arn:aws:cloudfront::${this.account}:distribution/${distribution.distributionId}`, // This line will cause an error if uncommented while distribution is commented out
             ],
           }),
+          */ // --- End Frontend Permissions Comment Out ---
         ],
       }),
     );
 
     // === Migration Task Definition ===
+    /* // --- Start Migration Task Comment Out ---
     const migrationTaskDefinition = new ecs.FargateTaskDefinition(
       this,
       'MigrationTaskDefinition',
@@ -458,14 +467,20 @@ export class EcocastStack extends cdk.Stack {
       command: ['pnpm', 'run', 'db:migrate'], // Override command to run migrations
       // No port mappings needed for migration task
     });
+    */ // --- End Migration Task Comment Out ---
 
     // === Outputs ===
+    /* // --- Start DB/JWT Outputs Comment Out ---
     this.dbSecretArn = new cdk.CfnOutput(this, 'DbSecretArn', {
       value: dbCredentialsSecret.secretArn,
       description:
         'ARN of the Secrets Manager secret containing DB credentials',
     });
-
+    this.jwtSecretArn = new cdk.CfnOutput(this, 'JwtSecretArn', {
+      value: jwtSecret.secretArn,
+      description: 'ARN of the Secrets Manager secret containing JWT secret',
+    });
+    */ // --- End DB/JWT Outputs Comment Out ---
     this.ecrRepositoryUri = new cdk.CfnOutput(this, 'EcrRepositoryUri', {
       value: ecrRepository.repositoryUri,
       description: 'URI of the ECR repository for the backend API',
@@ -487,11 +502,7 @@ export class EcocastStack extends cdk.Stack {
       { value: taskDefinition.taskDefinitionArn },
     );
 
-    this.jwtSecretArn = new cdk.CfnOutput(this, 'JwtSecretArn', {
-      value: jwtSecret.secretArn,
-      description: 'ARN of the Secrets Manager secret containing JWT secret',
-    });
-
+    /* // --- Start Frontend Outputs Comment Out ---
     this.frontendBucketName = new cdk.CfnOutput(this, 'FrontendBucketName', {
       value: frontendBucket.bucketName,
       description: 'Name of the S3 bucket for the frontend static assets',
@@ -513,6 +524,8 @@ export class EcocastStack extends cdk.Stack {
           'Domain name of the CloudFront distribution for the frontend',
       },
     );
+    */ // --- End Frontend Outputs Comment Out ---
+
     this.githubActionsRoleArn = new cdk.CfnOutput(
       this,
       'GitHubActionsRoleArn',
@@ -522,15 +535,16 @@ export class EcocastStack extends cdk.Stack {
       },
     );
 
-    // New outputs needed for running the migration task
+    /* // --- Start Migration Output Comment Out ---
     this.ecsMigrationTaskDefinitionArn = new cdk.CfnOutput(
       this,
       'EcsMigrationTaskDefinitionArn',
       {
-        value: migrationTaskDefinition.taskDefinitionArn,
+        value: migrationTaskDefinition.taskDefinitionArn, // This line will cause an error if uncommented
         description: 'ARN of the ECS Task Definition for running DB migrations',
       },
     );
+    */ // --- End Migration Output Comment Out ---
     this.privateSubnetIds = new cdk.CfnOutput(this, 'PrivateSubnetIds', {
       value: vpc.privateSubnets.map((subnet) => subnet.subnetId).join(','),
       description: 'Comma-separated list of private subnet IDs for ECS tasks',
