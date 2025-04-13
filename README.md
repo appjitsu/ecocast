@@ -2,6 +2,8 @@
 
 A monorepo-based web application for creating and publishing eco-focused content.
 
+[![CI/CD Pipeline](https://github.com/appjitsu/ecocast/actions/workflows/ci.yml/badge.svg)](https://github.com/appjitsu/ecocast/actions/workflows/ci.yml)
+
 ## Project Overview
 
 EcoCast consists of multiple applications and shared packages:
