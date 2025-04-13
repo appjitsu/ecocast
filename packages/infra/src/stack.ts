@@ -240,16 +240,19 @@ export class EcocastStack extends cdk.Stack {
       securityGroups: [serviceSecurityGroup],
       serviceName: 'ecocast-api-service',
       circuitBreaker: {
-        rollback: true, // Enable rollback on deployment failure
+        rollback: false, // Disable rollback on deployment failure
       },
     });
+
+    // Add a tag to force an update
+    cdk.Tags.of(fargateService).add('ForceUpdate', new Date().toISOString());
 
     // Connect ALB to Fargate Service
     listener.addTargets('ApiTargetGroup', {
       port: 80,
       targets: [fargateService],
       healthCheck: {
-        path: '/health', // TODO: Ensure your NestJS app has a /health endpoint
+        path: '/healthz', // Change path to force update
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(5),
         healthyThresholdCount: 2,
