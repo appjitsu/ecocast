@@ -1,1 +1,5 @@
-npx --no -- commitlint --edit ${1}
+# Remove any carriage returns from filename
+COMMIT_MSG_FILE=$(echo "$1" | tr -d '\r')
+
+# Run commitlint
+pnpm commitlint --edit "${COMMIT_MSG_FILE}"
