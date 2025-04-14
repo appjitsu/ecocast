@@ -7,6 +7,7 @@ import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager'; // Ensure this is uncommented or added
 // import * as rds from 'aws-cdk-lib/aws-rds'; // Commented out
 // import * as s3 from 'aws-cdk-lib/aws-s3'; // Commented out
 // import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager'; // Commented out
@@ -105,6 +106,57 @@ export class EcocastStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    // --- Import Secrets (Replace placeholder names with your actual secret names in AWS Secrets Manager) ---
+    const dbUrlSecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'DbUrlSecret',
+      'ecocast/prod/db/url',
+    ); // Replace 'ecocast/prod/db/url' with your secret name
+    // const dbPasswordSecret = secretsmanager.Secret.fromSecretNameV2(this, 'DbPasswordSecret', 'ecocast/prod/db/password'); // Removed
+    const jwtSecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'JwtSecret',
+      'ecocast/prod/jwt/secret',
+    ); // Replace 'ecocast/prod/jwt/secret'
+    const profileApiKeySecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'ProfileApiKeySecret',
+      'ecocast/prod/api/profile_key',
+    ); // Replace 'ecocast/prod/api/profile_key'
+    const sentryDsnSecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'SentryDsnSecret',
+      'ecocast/prod/sentry/dsn',
+    ); // Replace 'ecocast/prod/sentry/dsn'
+    const newsApiKeySecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'NewsApiKeySecret',
+      'ecocast/prod/api/news_key',
+    ); // Replace 'ecocast/prod/api/news_key'
+    const openaiApiKeySecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'OpenaiApiKeySecret',
+      'ecocast/prod/api/openai_key',
+    ); // Replace 'ecocast/prod/api/openai_key'
+    const voiceApiKeySecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'VoiceApiKeySecret',
+      'ecocast/prod/api/voice_key',
+    ); // NEW - Replace 'ecocast/prod/api/voice_key'
+    const internalApiKeySecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'InternalApiKeySecret',
+      'ecocast/prod/api/internal_key',
+    ); // NEW - Replace 'ecocast/prod/api/internal_key'
+    const sessionSecret = secretsmanager.Secret.fromSecretNameV2(
+      this,
+      'SessionSecret',
+      'ecocast/prod/session/secret',
+    ); // NEW - Assuming SESSION_SECRET is sensitive - Replace
+    // Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET if needed for production
+    // const googleClientIdSecret = secretsmanager.Secret.fromSecretNameV2(this, 'GoogleClientIdSecret', 'ecocast/prod/google/client_id');
+    // const googleClientSecretSecret = secretsmanager.Secret.fromSecretNameV2(this, 'GoogleClientSecretSecret', 'ecocast/prod/google/client_secret');
+
     // === API Task Definition (UNCOMMENTED) ===
     // --- Start Task Definition UNCOMMENT ---
     const taskDefinition = new ecs.FargateTaskDefinition(
@@ -124,14 +176,46 @@ export class EcocastStack extends cdk.Stack {
     taskDefinition.addContainer('ApiContainer', {
       image: ecs.ContainerImage.fromEcrRepository(ecrRepository, 'latest'),
       logging: ecs.LogDrivers.awsLogs({ streamPrefix: 'api', logGroup }),
-      portMappings: [{ containerPort: 3000 }],
-      environment: { NODE_ENV: 'production' }, // Still excludes DB env vars
-      // DB secrets section remains commented out
-      /* // --- Start DB Secrets Comment Out ---
-      secrets: { ... },
-      */ // --- End DB Secrets Comment Out ---
+      portMappings: [{ containerPort: 4001 }],
+      essential: true,
+      environment: {
+        NODE_ENV: 'production',
+        PORT: '4001',
+        JWT_TOKEN_AUDIENCE: 'YOUR_JWT_AUDIENCE',
+        JWT_TOKEN_ISSUER: 'YOUR_JWT_ISSUER',
+        JWT_ACCESS_TOKEN_TTL: '3600',
+        JWT_REFRESH_TOKEN_TTL: '604800',
+        API_URL: 'YOUR_PRODUCTION_API_URL',
+        COOKIE_DOMAIN: 'YOUR_PRODUCTION_DOMAIN',
+        CORS_ORIGIN: 'YOUR_PRODUCTION_FRONTEND_URL',
+        DATABASE_SYNC: 'false',
+      },
+      secrets: {
+        DATABASE_URL: ecs.Secret.fromSecretsManager(dbUrlSecret),
+        JWT_SECRET: ecs.Secret.fromSecretsManager(jwtSecret),
+        SESSION_SECRET: ecs.Secret.fromSecretsManager(sessionSecret),
+        API_KEY: ecs.Secret.fromSecretsManager(profileApiKeySecret),
+        SENTRY_DSN: ecs.Secret.fromSecretsManager(sentryDsnSecret),
+        NEWS_API_KEY: ecs.Secret.fromSecretsManager(newsApiKeySecret),
+        OPENAI_API_KEY: ecs.Secret.fromSecretsManager(openaiApiKeySecret),
+        VOICE_API_KEY: ecs.Secret.fromSecretsManager(voiceApiKeySecret),
+        API_KEY: ecs.Secret.fromSecretsManager(internalApiKeySecret),
+      },
     });
     // --- End Task Definition UNCOMMENT ---
+
+    // Grant the Task Execution Role permissions to read the secrets
+    dbUrlSecret.grantRead(taskExecutionRole);
+    jwtSecret.grantRead(taskExecutionRole);
+    sessionSecret.grantRead(taskExecutionRole);
+    profileApiKeySecret.grantRead(taskExecutionRole);
+    sentryDsnSecret.grantRead(taskExecutionRole);
+    newsApiKeySecret.grantRead(taskExecutionRole);
+    openaiApiKeySecret.grantRead(taskExecutionRole);
+    voiceApiKeySecret.grantRead(taskExecutionRole);
+    internalApiKeySecret.grantRead(taskExecutionRole);
+    // googleClientIdSecret?.grantRead(taskExecutionRole);
+    // googleClientSecretSecret?.grantRead(taskExecutionRole);
 
     // === Security Group ===
     const serviceSecurityGroup = new ec2.SecurityGroup(

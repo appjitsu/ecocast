@@ -44,7 +44,7 @@ export interface ApiEnv {
   GOOGLE_CLIENT_SECRET: string;
 
   // Profile
-  PROFILE_API_KEY?: string;
+  API_KEY?: string;
 
   // CORS
   NEXT_PUBLIC_APP_URL?: string;

@@ -186,14 +186,13 @@ jobs:
       #       echo "Migration task completed successfully."
       #     fi
 
-      - name: Render Amazon ECS task definition (for API service)
+      - name: Render Amazon ECS task definition
         id: render-api-task-def
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
-          task-definition: ${{ secrets.ECS_TASK_DEFINITION_ARN }} # API task definition
+          task-definition: ${{ secrets.ECS_TASK_DEFINITION_ARN }}
           container-name: ApiContainer
-          image: ${{ steps.build-image.outputs.image }} # Use the SHA-tagged image
-
+          image: ${{ steps.build-image.outputs.image }}
       - name: Deploy Amazon ECS task definition (for API service)
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:

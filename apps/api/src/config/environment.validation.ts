@@ -9,7 +9,7 @@ export default z.object({
   DATABASE_NAME: z.string().min(1, 'Database name is required'),
   DATABASE_USER: z.string().min(1, 'Database user is required'),
   DATABASE_PASSWORD: z.string().min(1, 'Database password is required'),
-  PROFILE_API_KEY: z.string().min(1, 'Profile API key is required'),
+  API_KEY: z.string().min(1, 'Profile API key is required'),
   JWT_SECRET: z.string().min(1, 'JWT secret is required'),
   JWT_TOKEN_AUDIENCE: z.string().min(1, 'JWT token audience is required'),
   JWT_TOKEN_ISSUER: z.string().min(1, 'JWT token issuer is required'),

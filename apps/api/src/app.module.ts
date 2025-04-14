@@ -1,7 +1,7 @@
 // import { BullModule } from '@nestjs/bull';
 import { CacheModule } from '@nestjs/cache-manager';
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
-import { ConfigModule, ConfigService, ConfigType } from '@nestjs/config';
+import { ConfigModule, ConfigType } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -100,52 +100,49 @@ const ENV = process.env.NODE_ENV;
       },
     }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
+      imports: [ConfigModule.forFeature(databaseConfig)],
+      inject: [databaseConfig.KEY],
+      useFactory: (dbConfig: ConfigType<typeof databaseConfig>) => {
         // Create a query logger instance with only the options object
         const queryLogger = new DatabaseQueryLogger({
-          slowQueryThreshold: configService.get(
-            'database.slowQueryThreshold',
-            1000,
-          ),
-          logAllQueries: configService.get(
-            'database.logAllQueries',
-            process.env.NODE_ENV !== 'production',
-          ),
+          slowQueryThreshold: dbConfig.slowQueryThreshold,
+          logAllQueries: dbConfig.logAllQueries,
         });
 
-        const config = {
+        const baseOptions = {
           type: 'postgres' as const,
-          synchronize: configService.get<boolean>('database.synchronize'),
-          port: configService.get<number>('database.port'),
-          username: configService.get<string>('database.user'),
-          password: configService.get<string>('database.password'),
-          host: configService.get<string>('database.host'),
-          autoLoadEntities: configService.get<boolean>(
-            'database.autoLoadEntities',
-          ),
-          database: configService.get<string>('database.name'),
+          synchronize: dbConfig.synchronize,
+          autoLoadEntities: dbConfig.autoLoadEntities,
           logging: queryLogger.getLoggerOptions(),
           logger: queryLogger,
           entities: [join(__dirname, '**', '*.entity.{ts,js}')],
-          maxQueryExecutionTime: configService.get<number>(
-            'database.slowQueryThreshold',
-            1000,
-          ),
-          // Add connection pool configuration
-          poolSize: configService.get<number>('database.poolSize', 10),
-          // Add SSL options for production
-          ssl: configService.get<boolean>('database.ssl', false)
-            ? {
-                rejectUnauthorized: configService.get<boolean>(
-                  'database.rejectUnauthorized',
-                  true,
-                ),
-              }
-            : false,
+          maxQueryExecutionTime: dbConfig.slowQueryThreshold,
+          poolSize: dbConfig.poolSize,
+          // SSL is handled by the URL or individual params below
         };
-        return config;
+
+        if (dbConfig.url) {
+          // If URL is provided by the config (from DATABASE_URL env var)
+          return {
+            ...baseOptions,
+            url: dbConfig.url,
+          };
+        } else {
+          // Otherwise, use individual parameters (fallback for local dev)
+          return {
+            ...baseOptions,
+            host: dbConfig.host,
+            port: dbConfig.port,
+            username: dbConfig.user,
+            password: dbConfig.password,
+            database: dbConfig.name,
+            ssl: dbConfig.ssl
+              ? {
+                  rejectUnauthorized: dbConfig.rejectUnauthorized,
+                }
+              : false,
+          };
+        }
       },
     }),
     WebhookModule,

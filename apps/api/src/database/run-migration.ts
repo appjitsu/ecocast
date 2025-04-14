@@ -1,20 +1,37 @@
 import { config } from 'dotenv';
-import { DataSource } from 'typeorm';
+import { join } from 'path';
+import { DataSource, DataSourceOptions } from 'typeorm';
 
 // Load environment variables
-config();
+config({ path: join(__dirname, '..', '..', '.env') });
 
-const dataSource = new DataSource({
-  type: 'postgres',
-  host: process.env.DATABASE_HOST || 'localhost',
-  port: parseInt(process.env.DATABASE_PORT || '5432'),
-  username: process.env.DATABASE_USER || 'postgres',
-  password: process.env.DATABASE_PASSWORD || 'postgres',
-  database: process.env.DATABASE_NAME || 'ecocast',
-  entities: ['src/**/*.entity.ts'],
-  migrations: ['src/database/migrations/*.ts'],
-  synchronize: false,
-});
+let dataSourceOptions: DataSourceOptions;
+
+if (process.env.DATABASE_URL) {
+  // If DATABASE_URL is provided, use it directly.
+  dataSourceOptions = {
+    type: 'postgres',
+    url: process.env.DATABASE_URL,
+    entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
+    migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
+    synchronize: false,
+  };
+} else {
+  // Fallback to individual components if DATABASE_URL is not set
+  dataSourceOptions = {
+    type: 'postgres',
+    host: process.env.DATABASE_HOST || 'localhost',
+    port: parseInt(process.env.DATABASE_PORT || '5432'),
+    username: process.env.DATABASE_USER || 'postgres',
+    password: process.env.DATABASE_PASSWORD || 'postgres',
+    database: process.env.DATABASE_NAME || 'ecocast',
+    entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
+    migrations: [join(__dirname, 'migrations', '*.{ts,js}')],
+    synchronize: false,
+  };
+}
+
+const dataSource = new DataSource(dataSourceOptions);
 
 async function runMigration() {
   try {
