@@ -24,7 +24,7 @@ Then, create an `eslint.config.js` (or `.eslintrc.js`) file in that app/package 
 **Example for a Next.js app (`apps/web/eslint.config.js`):**
 
 ```javascript
-const baseConfig = require('@repo/eslint-config/next');
+const baseConfig = require('@repo/eslint-config/next-js');
 
 module.exports = [
   {

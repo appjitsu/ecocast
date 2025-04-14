@@ -2,6 +2,8 @@
 
 This package contains the AWS Cloud Development Kit (CDK) code responsible for defining and provisioning the cloud infrastructure required for the Ecocast application.
 
+**Note:** The `src/stack.ts` file contains the definitions for all resources. Some resource blocks (e.g., Database, Frontend, Migrations) might be commented out by default in the provided source. Uncomment the relevant sections as needed for your deployment target.
+
 ## Overview
 
 This CDK stack provisions the following AWS resources:
@@ -148,7 +150,7 @@ Here's a summary of the deployment steps within the workflow:
 ## Database Migrations (TypeORM)
 
 - **Process:** Migrations are handled automatically during the `deploy-backend` GitHub Actions job _before_ the main API service is updated.
-- **Mechanism:** A dedicated ECS Fargate task (`MigrationTaskDefinition`) is run using the latest application code/image. This task executes the `pnpm db:migrate` script (defined in `apps/api/package.json`) against the RDS database.
+- **Mechanism:** A dedicated ECS Fargate task (`MigrationTaskDefinition`) is run using the latest application code/image. This task executes the migration script defined in `apps/api/package.json` (e.g., `pnpm --filter @repo/api migration:run`) against the RDS database. Verify the exact command override in the Migration Task Definition within `src/stack.ts`.
 - **Configuration:** Ensure your TypeORM `DataSource` in `apps/api` is configured to read connection details from environment variables (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USERNAME`, `DB_PASSWORD`). These are injected into the migration task by CDK.
 - **Safety:** The workflow waits for the migration task to complete and checks its status. If migrations fail, the deployment pipeline halts before updating the API service, preventing mismatches between code and schema.
 

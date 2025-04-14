@@ -1,6 +1,6 @@
 # @repo/utils
 
-Shared utility functions for the EcoCast project. These utilities provide common functionality that can be reused across the codebase.
+Shared utility functions for the EcoCast project. These utilities provide common functionality that can be reused across the codebase, leveraging libraries like [date-fns](https://date-fns.org/) for dates, [Zod](https://zod.dev/) for validation schemas, and [clsx](https://github.com/lukeed/clsx)/[tailwind-merge](https://github.com/dcastil/tailwind-merge) for UI class utilities.
 
 ## Installation
 
@@ -112,3 +112,24 @@ import { slugify } from '@repo/utils/string';
 2. When adding new utilities, make sure they're properly typed and exported from the main index.ts file.
 
 3. Consider adding tests for any new functionality to ensure reliability.
+
+## Building
+
+This package uses [tsup](https://tsup.egoist.dev/) to bundle the utilities.
+
+```bash
+# Build once (run from monorepo root)
+pnpm --filter @repo/utils build
+
+# Watch for changes (run from monorepo root)
+pnpm --filter @repo/utils dev
+```
+
+## Testing
+
+Tests are written using [Jest](https://jestjs.io/).
+
+```bash
+# Run tests once (run from monorepo root)
+pnpm --filter @repo/utils test
+```

@@ -1,10 +1,10 @@
 # Shared TypeScript Types (@repo/types)
 
-This package defines shared TypeScript types and interfaces used across the EcoCast monorepo, ensuring consistency between the API (`@repo/api`), frontend applications (`@repo/web`), and potentially other packages.
+This package defines shared TypeScript types, interfaces, and Data Transfer Objects (DTOs) used across the EcoCast monorepo, ensuring consistency between the API (`@repo/api`), frontend applications (`@repo/web`), and potentially other packages. It may also utilize [Zod](https://zod.dev/) for schema validation definitions within the types.
 
 ## Purpose
 
-- Provide a single source of truth for data structures.
+- Provide a single source of truth for data structures and API contracts.
 - Enable type safety across different parts of the application stack.
 - Reduce duplication of type definitions.
 
@@ -26,41 +26,54 @@ Add to the `package.json` of any app or package that needs these types:
 
 ## Usage
 
-Import types directly from the package:
+Import types, DTOs, or enums directly from the package:
 
 ```typescript
-import type { User, Cast, Comment } from '@repo/types';
+import type {
+  User,
+  Cast,
+  ICreateCastDTO,
+  PaginatedResponse,
+} from '@repo/types';
+import { AuthType } from '@repo/types';
 
 function displayUser(user: User) {
   console.log(user.name);
 }
 
-async function fetchCast(id: string): Promise<Cast | null> {
-  // ... implementation
+async function createCast(data: ICreateCastDTO): Promise<Cast> {
+  // ... implementation using API
 }
 ```
 
-## Key Types
+## Key Exports
 
-_(Note: This section should be populated with examples of the most important or commonly used types defined in this package. Examples might include:)_
+This package exports various types, interfaces, DTOs, and potentially enums/constants. Some key examples include:
 
-- `User`: Represents a user profile.
-- `Cast`: Represents a piece of content.
-- `Comment`: Represents a comment on a Cast.
-- `Reaction`: Represents a reaction to a Cast or Comment.
-- `ApiResponse`: Standard structure for API responses.
-- `Pagination`: Common structure for paginated data.
+- **Authentication:** `AuthTokens`, `RequestWithUser`, `ActiveUserData`, `AuthType` (enum), `GoogleUser`
+- **Users:** `User`
+- **Casts:** `Cast`, `ICreateCastDTO`, `IGetCastsDto`, `IPatchCastDTO`
+- **API Structures:** `PaginatedResponse`
+- **Environment:** `EnvironmentVariables` (likely used with Zod for validation)
+
+Refer to the `src/` directory and the main `src/index.ts` export file for a complete list.
 
 ## Contribution
 
-When adding or modifying types, ensure they are clearly named and exported from the main `index.ts` file (or relevant sub-modules if the package grows).
+When adding or modifying types/DTOs, ensure they are clearly named and exported from the main `index.ts` file or relevant sub-modules. If using Zod, define schemas alongside the corresponding types where appropriate.
 
 ## Building
 
-This package might not require a build step if it only contains type definitions (`.ts` files). If it includes compiled output (e.g., for JavaScript consumers), a build command would be defined in its `package.json`.
+This package uses [tsup](https://tsup.egoist.dev/) to bundle the TypeScript source into JavaScript (`.js`, `.mjs`) and declaration files (`.d.ts`) in the `dist/` directory. A build step is required after making changes.
 
-To build (if applicable, run from monorepo root):
+To build (run from monorepo root):
 
 ```bash
 pnpm --filter @repo/types build
+```
+
+To watch for changes and rebuild automatically during development:
+
+```bash
+pnpm --filter @repo/types dev
 ```
