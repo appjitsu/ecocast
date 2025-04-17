@@ -24,7 +24,7 @@ EcoCast consists of multiple applications and shared packages:
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/ecocast.git
+git clone https://github.com/appjitsu/ecocast.git
 cd ecocast
 
 # Install dependencies
